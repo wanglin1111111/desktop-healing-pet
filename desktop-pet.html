@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>☁️ 云朵猫咪 - 桌面治愈宠物</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 100vw; height: 100vh; overflow: hidden;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    cursor: default; user-select: none;
+    transition: background 1.5s ease;
+  }
+
+  /* ===== 动态场景背景系统 ===== */
+  body.scene-default { background: linear-gradient(135deg, #e8f4f8 0%, #d4eaf7 30%, #f0e6ff 60%, #fce4ec 100%); }
+  body.scene-starry { background: linear-gradient(180deg, #0a0e27 0%, #1a1a4e 40%, #2d1b69 70%, #1a1040 100%); }
+  body.scene-ocean { background: linear-gradient(180deg, #1a3a5c 0%, #2a6496 30%, #3a8fd4 60%, #1a4a7a 100%); }
+  body.scene-rain { background: linear-gradient(180deg, #4a5568 0%, #6b7b8d 30%, #8899aa 60%, #5a6a7a 100%); }
+  body.scene-forest { background: linear-gradient(180deg, #1a3a1a 0%, #2d5a27 30%, #4a8c3f 60%, #2d6b22 100%); }
+  body.scene-sunset { background: linear-gradient(180deg, #1a0a2e 0%, #6b2fa0 20%, #d4553a 50%, #f0a030 70%, #ffd080 100%); }
+  body.scene-sakura { background: linear-gradient(180deg, #fce4ec 0%, #f8bbd0 30%, #f48fb1 60%, #ec407a 100%); }
+  body.scene-snow { background: linear-gradient(180deg, #e8eef5 0%, #c5d5e8 30%, #a8c0d8 60%, #d0e0f0 100%); }
+
+  /* 场景粒子容器 */
+  .scene-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+
+  /* 星星 */
+  .star { position: fixed; border-radius: 50%; background: white; pointer-events: none; animation: twinkle var(--dur) ease-in-out infinite; animation-delay: var(--delay); }
+  @keyframes twinkle { 0%,100%{opacity:0.2;transform:scale(0.8);}50%{opacity:1;transform:scale(1.2);} }
+
+  /* 波浪 */
+  .wave-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 120px; pointer-events: none; z-index: 1; overflow: hidden; }
+  .wave-container .wave { position: absolute; bottom: 0; width: 200%; height: 100%; border-radius: 40% 45% 0 0; animation: waveMove var(--dur) linear infinite; }
+  .wave-container .wave:nth-child(1) { background: rgba(58,143,212,0.3); --dur: 7s; bottom: -10px; }
+  .wave-container .wave:nth-child(2) { background: rgba(42,100,150,0.25); --dur: 9s; bottom: -20px; animation-delay: -2s; }
+  .wave-container .wave:nth-child(3) { background: rgba(26,74,122,0.2); --dur: 11s; bottom: -30px; animation-delay: -4s; }
+  @keyframes waveMove { 0%{transform:translateX(0);}100%{transform:translateX(-50%);} }
+
+  /* 雨滴 */
+  .rain-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+  .raindrop { position: absolute; top: -20px; width: 2px; background: linear-gradient(transparent, rgba(174,194,224,0.6)); animation: rainFall var(--dur) linear infinite; animation-delay: var(--delay); }
+  @keyframes rainFall { 0%{transform:translateY(-20px);opacity:0.7;}100%{transform:translateY(100vh);opacity:0.3;} }
+
+  /* 树叶 */
+  .leaf { position: fixed; top: -30px; pointer-events: none; z-index: 1; animation: leafFall var(--dur) linear infinite; animation-delay: var(--delay); font-size: var(--size); opacity: 0.7; }
+  @keyframes leafFall { 0%{transform:translateY(-30px) rotate(0deg) translateX(0);opacity:0.7;}25%{transform:translateY(25vh) rotate(90deg) translateX(30px);}50%{transform:translateY(50vh) rotate(180deg) translateX(-20px);}75%{transform:translateY(75vh) rotate(270deg) translateX(25px);}100%{transform:translateY(100vh) rotate(360deg) translateX(0);opacity:0;} }
+
+  /* 日落光晕 */
+  .sunset-glow { position: fixed; bottom: 20%; left: 50%; transform: translateX(-50%); width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(255,160,48,0.4) 0%, rgba(255,100,50,0.2) 40%, transparent 70%); pointer-events: none; z-index: 1; animation: sunsetPulse 4s ease-in-out infinite; }
+  @keyframes sunsetPulse { 0%,100%{transform:translateX(-50%) scale(1);opacity:0.8;}50%{transform:translateX(-50%) scale(1.15);opacity:1;} }
+
+  /* 花瓣 */
+  .petal { position: fixed; top: -20px; pointer-events: none; z-index: 1; width: var(--size); height: var(--size); background: radial-gradient(ellipse, rgba(255,255,255,0.8) 0%, rgba(248,187,208,0.6) 100%); border-radius: 50% 0 50% 50%; animation: petalFall var(--dur) linear infinite; animation-delay: var(--delay); }
+  @keyframes petalFall { 0%{transform:translateY(-20px) rotate(0deg) translateX(0);opacity:0.8;}33%{transform:translateY(33vh) rotate(120deg) translateX(40px);}66%{transform:translateY(66vh) rotate(240deg) translateX(-30px);}100%{transform:translateY(100vh) rotate(360deg) translateX(20px);opacity:0;} }
+
+  /* 雪花 */
+  .snowflake { position: fixed; top: -10px; pointer-events: none; z-index: 1; width: var(--size); height: var(--size); background: white; border-radius: 50%; opacity: 0.8; animation: snowFall var(--dur) linear infinite; animation-delay: var(--delay); }
+  @keyframes snowFall { 0%{transform:translateY(-10px) translateX(0) rotate(0deg);opacity:0.8;}25%{transform:translateY(25vh) translateX(15px) rotate(90deg);}50%{transform:translateY(50vh) translateX(-10px) rotate(180deg);}75%{transform:translateY(75vh) translateX(20px) rotate(270deg);}100%{transform:translateY(100vh) translateX(5px) rotate(360deg);opacity:0.3;} }
+
+  /* 默认浮动粒子 */
+  .bg-particle { position: fixed; border-radius: 50%; pointer-events: none; opacity: 0.3; animation: floatP linear infinite; }
+  @keyframes floatP { 0%{transform:translateY(100vh) rotate(0deg);opacity:0;}10%{opacity:0.3;}90%{opacity:0.3;}100%{transform:translateY(-10vh) rotate(360deg);opacity:0;} }
+
+  /* ===== 情绪光环系统 ===== */
+  .emotion-aura { position: absolute; width: 220px; height: 220px; top: -20px; left: -20px; border-radius: 50%; pointer-events: none; z-index: 0; transition: all 1s ease; opacity: 0; }
+  .emotion-aura.active { opacity: 1; }
+  .emotion-aura.aura-happy { background: radial-gradient(circle, rgba(255,200,50,0.3) 0%, rgba(255,180,0,0.1) 40%, transparent 70%); animation: auraGlow 2s ease-in-out infinite; }
+  .emotion-aura.aura-sad { background: radial-gradient(circle, rgba(100,150,255,0.25) 0%, rgba(80,120,200,0.1) 40%, transparent 70%); animation: auraGlow 3s ease-in-out infinite; }
+  .emotion-aura.aura-comfort { background: radial-gradient(circle, rgba(255,150,200,0.3) 0%, rgba(255,100,150,0.1) 40%, transparent 70%); animation: auraExpand 2.5s ease-in-out infinite; }
+  .emotion-aura.aura-excited { background: radial-gradient(circle, rgba(255,100,100,0.2) 0%, rgba(100,200,255,0.15) 40%, rgba(255,200,100,0.1) 60%, transparent 70%); animation: auraBurst 1.5s ease-in-out infinite; }
+  .emotion-aura.aura-calm { background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, rgba(220,230,255,0.1) 40%, transparent 70%); animation: auraBreathe 3s ease-in-out infinite; }
+  @keyframes auraGlow { 0%,100%{transform:scale(1);opacity:0.7;}50%{transform:scale(1.1);opacity:1;} }
+  @keyframes auraExpand { 0%,100%{transform:scale(1);opacity:0.6;}50%{transform:scale(1.2);opacity:1;} }
+  @keyframes auraBurst { 0%,100%{transform:scale(1) rotate(0deg);opacity:0.6;}50%{transform:scale(1.15) rotate(10deg);opacity:1;} }
+  @keyframes auraBreathe { 0%,100%{transform:scale(0.95);opacity:0.4;}50%{transform:scale(1.1);opacity:0.8;} }
+
+  /* 情绪粒子 */
+  .emotion-particle { position: absolute; pointer-events: none; z-index: 10; border-radius: 50%; animation: emotionPF 2s ease-out forwards; }
+  @keyframes emotionPF { 0%{opacity:1;transform:translate(0,0) scale(0.5);}50%{opacity:1;transform:translate(var(--dx),var(--dy)) scale(1);}100%{opacity:0;transform:translate(var(--dx2),var(--dy2)) scale(0.6);} }
+
+  /* ===== 宠物容器 ===== */
+  #pet-container { position: absolute; width: 180px; height: 200px; cursor: grab; transition: filter 0.3s; z-index: 100; }
+  #pet-container:active { cursor: grabbing; }
+  #pet-container:hover { filter: brightness(1.05) drop-shadow(0 0 15px rgba(135,206,235,0.5)); }
+  .pet-body { position: relative; width: 180px; height: 180px; }
+  .pet-main-body { position: absolute; width: 130px; height: 110px; background: radial-gradient(ellipse at 50% 60%, #b8e8f0 0%, #87ceeb 40%, #6bb8d6 100%); border-radius: 50% 50% 48% 48%; left: 25px; top: 50px; box-shadow: inset 0 -10px 20px rgba(100,180,210,0.3), 0 8px 25px rgba(100,180,210,0.4), 0 0 40px rgba(135,206,235,0.2); animation: bodyBreathe 3s ease-in-out infinite; }
+  @keyframes bodyBreathe { 0%,100%{transform:scaleY(1) scaleX(1);}50%{transform:scaleY(1.03) scaleX(1.02);} }
+  .pet-head { position: absolute; width: 120px; height: 100px; background: radial-gradient(ellipse at 50% 55%, #c5eef5 0%, #93d5e8 40%, #7ec8dd 100%); border-radius: 50% 50% 45% 45%; left: 30px; top: 15px; box-shadow: inset 0 -8px 15px rgba(100,180,210,0.2), 0 4px 15px rgba(100,180,210,0.3); animation: headBob 2.5s ease-in-out infinite; z-index: 2; transition: transform 0.3s ease; }
+  @keyframes headBob { 0%,100%{transform:translateY(0) rotate(0deg);}25%{transform:translateY(-3px) rotate(-2deg);}75%{transform:translateY(-1px) rotate(1deg);} }
+  @keyframes headTiltL { 0%,100%{transform:rotate(0deg);}50%{transform:rotate(-12deg) translateY(-2px);} }
+  @keyframes headTiltR { 0%,100%{transform:rotate(0deg);}50%{transform:rotate(12deg) translateY(-2px);} }
+  @keyframes headNod { 0%,100%{transform:translateY(0) rotate(0deg);}30%{transform:translateY(4px) rotate(-3deg);}60%{transform:translateY(-2px) rotate(2deg);} }
+  @keyframes headShake { 0%,100%{transform:rotate(0deg);}20%{transform:rotate(-8deg);}40%{transform:rotate(8deg);}60%{transform:rotate(-5deg);}80%{transform:rotate(5deg);} }
+  @keyframes headThink { 0%,100%{transform:rotate(0deg) translateY(0);}50%{transform:rotate(-10deg) translateY(-3px);} }
+
+  .pet-ear-left, .pet-ear-right { position: absolute; width: 35px; height: 45px; background: radial-gradient(ellipse at 50% 70%, #93d5e8 0%, #7ec8dd 100%); z-index: 1; }
+  .pet-ear-left { left:28px; top:-8px; border-radius:50% 50% 20% 20%; transform:rotate(-15deg); animation:earL 4s ease-in-out infinite; }
+  .pet-ear-right { right:28px; top:-8px; border-radius:50% 50% 20% 20%; transform:rotate(15deg); animation:earR 5s ease-in-out infinite; }
+  .pet-ear-left::after, .pet-ear-right::after { content:''; position:absolute; width:20px; height:28px; background:radial-gradient(ellipse,#ffd4b8 0%,#ffb89e 100%); border-radius:50% 50% 20% 20%; top:8px; left:7px; }
+  @keyframes earL { 0%,90%,100%{transform:rotate(-15deg);}93%{transform:rotate(-22deg);}96%{transform:rotate(-12deg);} }
+  @keyframes earR { 0%,85%,100%{transform:rotate(15deg);}88%{transform:rotate(22deg);}91%{transform:rotate(12deg);} }
+  @keyframes earPerkL { 0%,100%{transform:rotate(-15deg);}50%{transform:rotate(-25deg);} }
+  @keyframes earPerkR { 0%,100%{transform:rotate(15deg);}50%{transform:rotate(25deg);} }
+  @keyframes earThinkL { 0%,100%{transform:rotate(-15deg);}30%{transform:rotate(-28deg);}60%{transform:rotate(-10deg);} }
+  @keyframes earThinkR { 0%,100%{transform:rotate(15deg);}30%{transform:rotate(25deg);}60%{transform:rotate(8deg);} }
+
+  .pet-eyes { position:absolute; top:38px; left:50%; transform:translateX(-50%); display:flex; gap:22px; z-index:3; }
+  .pet-eye { width:22px; height:22px; position:relative; }
+  .pet-eye .eye-open { width:22px; height:22px; background:radial-gradient(circle at 45% 40%,#4dd9e8 0%,#2ab8c9 50%,#1a9aad 100%); border-radius:50%; position:relative; box-shadow:0 0 8px rgba(77,217,232,0.5); display:none; }
+  .pet-eye .eye-open::before { content:''; position:absolute; width:8px; height:8px; background:white; border-radius:50%; top:4px; left:5px; }
+  .pet-eye .eye-open::after { content:''; position:absolute; width:4px; height:4px; background:rgba(255,255,255,0.7); border-radius:50%; bottom:5px; right:4px; }
+  .pet-eye .eye-happy { width:18px; height:10px; border-bottom:3px solid #1a9aad; border-radius:0 0 50% 50%; position:absolute; top:8px; left:2px; }
+  .pet-eye .eye-sleepy { width:18px; height:3px; background:#1a9aad; border-radius:2px; position:absolute; top:12px; left:2px; display:none; }
+  .pet-eye .eye-love { width:16px; height:16px; position:absolute; top:5px; left:3px; display:none; font-size:14px; line-height:1; }
+  .pet-eye .eye-sad { width:18px; height:8px; border-bottom:3px solid #1a9aad; border-radius:0 0 50% 50%; position:absolute; top:10px; left:2px; display:none; opacity:0.7; }
+  .pet-eye .eye-sparkle { width:22px; height:22px; background:radial-gradient(circle at 45% 40%,#4dd9e8 0%,#2ab8c9 50%,#1a9aad 100%); border-radius:50%; position:relative; box-shadow:0 0 12px rgba(77,217,232,0.8); display:none; }
+  .pet-eye .eye-sparkle::before { content:'✦'; position:absolute; width:10px; height:10px; color:white; font-size:10px; top:3px; left:4px; }
+  .pet-eye .eye-sparkle::after { content:'✦'; position:absolute; width:6px; height:6px; color:rgba(255,255,255,0.7); font-size:6px; bottom:4px; right:3px; }
+  .pet-eye.blinking .eye-happy { animation:blink 0.15s ease-in-out; }
+  @keyframes blink { 0%,100%{transform:scaleY(1);}50%{transform:scaleY(0.1);} }
+
+  .pet-blush-left, .pet-blush-right { position:absolute; width:18px; height:12px; background:radial-gradient(ellipse,rgba(255,150,150,0.5) 0%,rgba(255,150,150,0) 100%); border-radius:50%; top:52px; z-index:3; transition:all 0.3s; }
+  .pet-blush-left { left:18px; } .pet-blush-right { right:18px; }
+  #pet-container.blushing .pet-blush-left, #pet-container.blushing .pet-blush-right { width:22px; height:15px; background:radial-gradient(ellipse,rgba(255,120,120,0.7) 0%,rgba(255,150,150,0) 100%); }
+  .pet-nose { position:absolute; width:8px; height:6px; background:#7ec8dd; border-radius:50% 50% 50% 50%/30% 30% 70% 70%; top:55px; left:50%; transform:translateX(-50%); z-index:3; }
+  .pet-mouth { position:absolute; top:60px; left:50%; transform:translateX(-50%); z-index:3; }
+  .pet-mouth .m-happy { width:14px; height:8px; border-bottom:2.5px solid #5aabb8; border-radius:0 0 50% 50%; }
+  .pet-mouth .m-eating { width:12px; height:10px; background:#5aabb8; border-radius:50%; display:none; animation:mEat 0.3s ease-in-out infinite; }
+  .pet-mouth .m-open { width:16px; height:12px; background:radial-gradient(ellipse,#5aabb8 0%,#4a9aa8 100%); border-radius:50% 50% 50% 50%/40% 40% 60% 60%; display:none; }
+  .pet-mouth .m-open::after { content:''; position:absolute; width:8px; height:5px; background:#ffb89e; border-radius:0 0 50% 50%; bottom:1px; left:4px; }
+  .pet-mouth .m-excited { width:20px; height:16px; background:radial-gradient(ellipse,#5aabb8 0%,#4a9aa8 100%); border-radius:50%; display:none; animation:mExc 0.4s ease-in-out infinite; }
+  .pet-mouth .m-excited::after { content:''; position:absolute; width:10px; height:6px; background:#ffb89e; border-radius:0 0 50% 50%; bottom:1px; left:5px; }
+  .pet-mouth .m-sad { width:12px; height:6px; border-top:2.5px solid #5aabb8; border-radius:50% 50% 0 0; display:none; }
+  .pet-mouth .m-meow { width:10px; height:10px; background:radial-gradient(ellipse,#5aabb8 0%,#4a9aa8 100%); border-radius:50%; display:none; animation:mMeow 0.6s ease-in-out infinite; }
+  @keyframes mEat { 0%,100%{transform:scaleY(1);}50%{transform:scaleY(0.5);} }
+  @keyframes mExc { 0%,100%{transform:scaleY(1) scaleX(1);}50%{transform:scaleY(1.15) scaleX(1.1);} }
+  @keyframes mMeow { 0%,100%{transform:scale(1);}50%{transform:scale(1.2);} }
+  .pet-whiskers { position:absolute; top:52px; left:50%; transform:translateX(-50%); z-index:3; width:120px; }
+  .whisker { position:absolute; width:28px; height:1.5px; background:rgba(255,255,255,0.6); border-radius:1px; }
+  .whisker.l1{left:2px;top:0;transform:rotate(-8deg);} .whisker.l2{left:0;top:8px;transform:rotate(3deg);} .whisker.l3{left:2px;top:16px;transform:rotate(12deg);}
+  .whisker.r1{right:2px;top:0;transform:rotate(8deg);} .whisker.r2{right:0;top:8px;transform:rotate(-3deg);} .whisker.r3{right:2px;top:16px;transform:rotate(-12deg);}
+  #pet-container.sad-w .whisker.l1{transform:rotate(5deg);} #pet-container.sad-w .whisker.l3{transform:rotate(18deg);}
+  #pet-container.sad-w .whisker.r1{transform:rotate(-5deg);} #pet-container.sad-w .whisker.r3{transform:rotate(-18deg);}
+
+  .pet-paw-left, .pet-paw-right { position:absolute; width:30px; height:22px; background:radial-gradient(ellipse at 50% 60%,#c5eef5 0%,#a8dce8 100%); border-radius:50% 50% 45% 45%; bottom:8px; z-index:4; box-shadow:0 3px 8px rgba(100,180,210,0.3); }
+  .pet-paw-left{left:35px;} .pet-paw-right{right:35px;}
+  .pet-paw-left::after, .pet-paw-right::after { content:''; position:absolute; width:16px; height:10px; background:radial-gradient(ellipse,#ffd4b8 0%,rgba(255,212,184,0.5) 100%); border-radius:50%; bottom:2px; left:7px; }
+  @keyframes pawWave { 0%,100%{transform:rotate(0deg) translateY(0);}25%{transform:rotate(-20deg) translateY(-15px);}50%{transform:rotate(-10deg) translateY(-20px);}75%{transform:rotate(-25deg) translateY(-12px);} }
+  #pet-container.waving .pet-paw-right { animation:pawWave 0.6s ease-in-out 3; transform-origin:top center; }
+  @keyframes pawBeg { 0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);} }
+  #pet-container.begging .pet-paw-left, #pet-container.begging .pet-paw-right { animation:pawBeg 0.5s ease-in-out infinite; }
+
+  .pet-tail { position:absolute; width:60px; height:50px; border:8px solid transparent; border-right:8px solid #93d5e8; border-top:8px solid #93d5e8; border-radius:0 50% 0 0; right:-10px; bottom:30px; z-index:0; animation:tailW 2s ease-in-out infinite; transform-origin:left bottom; }
+  @keyframes tailW { 0%,100%{transform:rotate(-10deg);}50%{transform:rotate(15deg);} }
+  @keyframes tailWF { 0%,100%{transform:rotate(-15deg);}50%{transform:rotate(20deg);} }
+  #pet-container.happy-t .pet-tail { animation:tailWF 0.4s ease-in-out infinite; }
+  @keyframes tailWS { 0%,100%{transform:rotate(-5deg);}50%{transform:rotate(5deg);} }
+  #pet-container.sad-t .pet-tail { animation:tailWS 3s ease-in-out infinite; }
+  .pet-glow { position:absolute; width:40px; height:40px; background:radial-gradient(circle,rgba(255,220,150,0.4) 0%,rgba(255,220,150,0) 70%); border-radius:50%; top:85px; left:70px; z-index:3; animation:glowP 3s ease-in-out infinite; }
+  @keyframes glowP { 0%,100%{transform:scale(1);opacity:0.6;}50%{transform:scale(1.3);opacity:1;} }
+  .pet-shadow { position:absolute; width:100px; height:20px; background:radial-gradient(ellipse,rgba(100,180,210,0.25) 0%,rgba(100,180,210,0) 70%); border-radius:50%; bottom:-5px; left:40px; animation:shP 3s ease-in-out infinite; }
+  @keyframes shP { 0%,100%{transform:scaleX(1);opacity:0.6;}50%{transform:scaleX(1.1);opacity:0.8;} }
+
+  /* ===== 新增宠物姿态动画 ===== */
+  #pet-container.sitting .pet-main-body { animation: sitBody 0.5s ease forwards; }
+  @keyframes sitBody { 0%{transform:scaleY(1);}100%{transform:scaleY(0.85) scaleX(1.05);} }
+  #pet-container.sitting .pet-paw-left { transform: translateX(10px); }
+  #pet-container.sitting .pet-paw-right { transform: translateX(-10px); }
+
+  #pet-container.lying .pet-main-body { animation: lieBody 0.6s ease forwards; }
+  @keyframes lieBody { 0%{transform:scaleY(1);}100%{transform:scaleY(0.6) scaleX(1.15);} }
+  #pet-container.lying .pet-head { animation: lieHead 0.6s ease forwards; }
+  @keyframes lieHead { 0%{transform:translateY(0);}100%{transform:translateY(15px) rotate(5deg);} }
+  #pet-container.lying .pet-paw-left { transform: translateX(15px) translateY(5px); }
+  #pet-container.lying .pet-paw-right { transform: translateX(-15px) translateY(5px); }
+
+  #pet-container.snuggling .pet-body { animation: snuggleBody 2s ease-in-out infinite; }
+  @keyframes snuggleBody { 0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg);} }
+  #pet-container.snuggling .pet-tail { animation: tailWF 1s ease-in-out infinite; }
+
+  #pet-container.rolling .pet-body { animation: rollBody 0.8s ease-in-out 2; }
+  @keyframes rollBody { 0%{transform:rotate(0deg);}25%{transform:rotate(15deg);}50%{transform:rotate(0deg);}75%{transform:rotate(-15deg);}100%{transform:rotate(0deg);} }
+
+  #pet-container.stretching .pet-main-body { animation: stretchBody 1.5s ease-in-out forwards; }
+  @keyframes stretchBody { 0%{transform:scaleY(1) scaleX(1);}30%{transform:scaleY(0.9) scaleX(1.2);}60%{transform:scaleY(1.1) scaleX(0.95);}100%{transform:scaleY(1) scaleX(1);} }
+  #pet-container.stretching .pet-paw-left { animation: stretchPaw 1.5s ease-in-out forwards; }
+  #pet-container.stretching .pet-paw-right { animation: stretchPawR 1.5s ease-in-out forwards; }
+  @keyframes stretchPaw { 0%{transform:translateY(0);}30%{transform:translateY(-15px) translateX(-10px);}100%{transform:translateY(0);} }
+  @keyframes stretchPawR { 0%{transform:translateY(0);}30%{transform:translateY(-15px) translateX(10px);}100%{transform:translateY(0);} }
+
+  #pet-container.shaking .pet-body { animation: shakeFur 0.15s ease-in-out 8; }
+  @keyframes shakeFur { 0%,100%{transform:translateX(0);}25%{transform:translateX(-3px);}75%{transform:translateX(3px);} }
+
+  #pet-container.thinking .pet-head { animation: headThink 1.5s ease-in-out infinite; }
+  #pet-container.thinking .pet-ear-left { animation: earThinkL 1.2s ease-in-out infinite; }
+  #pet-container.thinking .pet-ear-right { animation: earThinkR 1.2s ease-in-out infinite; }
+
+  /* 原有动画状态 */
+  #pet-container.jumping .pet-body { animation:jumpA 0.6s ease-in-out; }
+  @keyframes jumpA { 0%{transform:translateY(0);}30%{transform:translateY(-60px) scaleX(0.9) scaleY(1.1);}50%{transform:translateY(-70px) scaleX(1.05) scaleY(0.95);}70%{transform:translateY(-40px);}85%{transform:translateY(5px) scaleX(1.1) scaleY(0.9);}100%{transform:translateY(0);} }
+  #pet-container.walking .pet-paw-left { animation:wl 0.4s ease-in-out infinite; }
+  #pet-container.walking .pet-paw-right { animation:wr 0.4s ease-in-out infinite 0.2s; }
+  @keyframes wl { 0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);} }
+  @keyframes wr { 0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);} }
+  #pet-container.sleeping .pet-body { animation:sleepB 4s ease-in-out infinite; }
+  @keyframes sleepB { 0%,100%{transform:scaleY(1) scaleX(1.05);}50%{transform:scaleY(1.06) scaleX(1.08);} }
+  #pet-container.eating .pet-head { animation:eatB 0.4s ease-in-out infinite; }
+  @keyframes eatB { 0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(5px) rotate(3deg);} }
+  #pet-container.excited .pet-body { animation:excS 0.3s ease-in-out infinite; }
+  @keyframes excS { 0%,100%{transform:rotate(0deg);}25%{transform:rotate(-5deg);}75%{transform:rotate(5deg);} }
+  #pet-container.listening .pet-ear-left { animation:earPerkL 0.8s ease-in-out infinite; }
+  #pet-container.listening .pet-ear-right { animation:earPerkR 0.8s ease-in-out infinite; }
+  @keyframes comfortSway { 0%,100%{transform:rotate(0deg) translateY(0);}25%{transform:rotate(-3deg) translateY(-2px);}75%{transform:rotate(3deg) translateY(-1px);} }
+  #pet-container.comforting .pet-body { animation:comfortSway 2s ease-in-out infinite; }
+
+  /* ===== 粒子效果 ===== */
+  .zzz { position:absolute; font-size:16px; color:rgba(135,206,235,0.8); font-weight:bold; pointer-events:none; animation:zzzF 2s ease-out forwards; z-index:10; }
+  @keyframes zzzF { 0%{opacity:1;transform:translate(0,0) scale(0.8);}100%{opacity:0;transform:translate(20px,-50px) scale(1.3);} }
+  .heart-particle { position:absolute; font-size:18px; pointer-events:none; animation:hF 1.5s ease-out forwards; z-index:10; }
+  @keyframes hF { 0%{opacity:1;transform:translate(0,0) scale(0.5);}50%{opacity:1;transform:translate(var(--dx),-30px) scale(1);}100%{opacity:0;transform:translate(var(--dx2),-60px) scale(0.8);} }
+  .sparkle { position:absolute; width:6px; height:6px; background:radial-gradient(circle,#ffe066 0%,rgba(255,224,102,0) 70%); border-radius:50%; pointer-events:none; animation:spA 1s ease-out forwards; z-index:10; }
+  @keyframes spA { 0%{opacity:1;transform:scale(0);}50%{opacity:1;transform:scale(1.5);}100%{opacity:0;transform:scale(0);} }
+  .music-note { position:absolute; font-size:16px; pointer-events:none; animation:nF 2s ease-out forwards; z-index:10; }
+  @keyframes nF { 0%{opacity:1;transform:translate(0,0) scale(0.5) rotate(0deg);}50%{opacity:1;transform:translate(var(--dx),-40px) scale(1) rotate(15deg);}100%{opacity:0;transform:translate(var(--dx2),-80px) scale(0.6) rotate(-10deg);} }
+  .sweat-drop { position:absolute; font-size:14px; pointer-events:none; animation:swD 1s ease-in forwards; z-index:10; }
+  @keyframes swD { 0%{opacity:1;transform:translate(0,0) scale(0.5);}100%{opacity:0;transform:translate(5px,30px) scale(1);} }
+
+  .speech-bubble { position:absolute; top:-60px; left:50%; transform:translateX(-50%) scale(0); background:white; border-radius:18px; padding:8px 16px; font-size:14px; color:#5aabb8; box-shadow:0 4px 15px rgba(100,180,210,0.2); white-space:nowrap; z-index:20; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events:none; max-width:280px; white-space:normal; text-align:center; line-height:1.4; }
+  .speech-bubble.show { transform:translateX(-50%) scale(1); }
+  .speech-bubble::after { content:''; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); border-left:8px solid transparent; border-right:8px solid transparent; border-top:10px solid white; }
+  .pet-voice-wave { position:absolute; bottom:-40px; left:50%; transform:translateX(-50%); display:flex; gap:3px; align-items:flex-end; height:20px; opacity:0; transition:opacity 0.3s; }
+  .pet-voice-wave.active { opacity:1; }
+  .pet-voice-wave .pbar { width:3px; background:#87ceeb; border-radius:2px; animation:pP 0.4s ease-in-out infinite; }
+  .pet-voice-wave .pbar:nth-child(1){height:8px;animation-delay:0s;} .pet-voice-wave .pbar:nth-child(2){height:14px;animation-delay:0.08s;} .pet-voice-wave .pbar:nth-child(3){height:10px;animation-delay:0.16s;} .pet-voice-wave .pbar:nth-child(4){height:16px;animation-delay:0.12s;} .pet-voice-wave .pbar:nth-child(5){height:6px;animation-delay:0.2s;}
+  @keyframes pP { 0%,100%{transform:scaleY(1);}50%{transform:scaleY(0.2);} }
+  .name-tag { position:absolute; bottom:-22px; left:50%; transform:translateX(-50%); font-size:12px; color:rgba(90,170,184,0.7); white-space:nowrap; letter-spacing:1px; }
+
+  /* ===== 状态栏 ===== */
+  #status-bar { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.85); backdrop-filter:blur(10px); border-radius:20px; padding:12px 28px; display:flex; gap:24px; align-items:center; box-shadow:0 4px 20px rgba(100,180,210,0.15); z-index:200; font-size:14px; color:#5aabb8; }
+  .stat-item { display:flex; align-items:center; gap:6px; }
+  .stat-icon { font-size:18px; }
+  .stat-bar-bg { width:80px; height:8px; background:#e8f4f8; border-radius:4px; overflow:hidden; }
+  .stat-bar-fill { height:100%; border-radius:4px; transition:width 0.5s ease; }
+  .stat-bar-fill.hunger { background:linear-gradient(90deg,#ffb347,#ff6b6b); }
+  .stat-bar-fill.happy { background:linear-gradient(90deg,#87ceeb,#b8e986); }
+  .stat-bar-fill.energy { background:linear-gradient(90deg,#a78bfa,#6366f1); }
+  .sound-toggle { width:36px; height:36px; border-radius:50%; border:2px solid #e8f4f8; background:white; color:#5aabb8; font-size:16px; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; margin-left:4px; }
+  .sound-toggle:hover { border-color:#87ceeb; background:#f0f8ff; }
+  .sound-toggle.muted { color:#ccc; border-color:#ddd; }
+
+  /* ===== 聊天面板 ===== */
+  #chat-panel { position:fixed; bottom:0; left:0; right:0; height:340px; background:rgba(255,255,255,0.95); backdrop-filter:blur(16px); border-radius:24px 24px 0 0; box-shadow:0 -8px 40px rgba(100,180,210,0.15); z-index:200; display:flex; flex-direction:column; transform:translateY(100%); transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  #chat-panel.show { transform:translateY(0); }
+  .chat-tabs { display:flex; gap:4px; padding:12px 16px 0; overflow-x:auto; scrollbar-width:none; }
+  .chat-tabs::-webkit-scrollbar { display:none; }
+  .chat-tab { padding:8px 16px; border-radius:12px 12px 0 0; border:none; background:#f0f6f8; color:#93b8c4; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; transition:all 0.3s; font-family:inherit; }
+  .chat-tab:hover { background:#e4eef2; }
+  .chat-tab.active { background:white; color:#5aabb8; box-shadow:0 -2px 8px rgba(100,180,210,0.1); }
+
+  .scene-bar { display:flex; gap:6px; padding:8px 16px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid #f0f0f0; }
+  .scene-bar::-webkit-scrollbar { display:none; }
+  .scene-btn { width:36px; height:36px; border-radius:50%; border:2px solid #e8f4f8; background:white; font-size:16px; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; }
+  .scene-btn:hover { border-color:#87ceeb; transform:scale(1.1); }
+  .scene-btn.active { border-color:#87ceeb; background:#e8f4f8; box-shadow:0 2px 8px rgba(135,206,235,0.3); }
+  .scene-btn .scene-tip { position:absolute; bottom:-22px; left:50%; transform:translateX(-50%); font-size:10px; color:#5aabb8; white-space:nowrap; opacity:0; transition:opacity 0.2s; pointer-events:none; background:white; padding:1px 6px; border-radius:4px; box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+  .scene-btn:hover .scene-tip { opacity:1; }
+
+  .chat-messages { flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:10px; }
+  .chat-messages::-webkit-scrollbar { width:4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background:#d4eaf7; border-radius:2px; }
+  .chat-msg { max-width:80%; padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.5; word-break:break-word; animation:msgIn 0.3s ease-out; }
+  @keyframes msgIn { 0%{opacity:0;transform:translateY(8px);}100%{opacity:1;transform:translateY(0);} }
+  .chat-msg.user { align-self:flex-end; background:linear-gradient(135deg,#87ceeb,#6bb8d6); color:white; border-bottom-right-radius:4px; }
+  .chat-msg.pet { align-self:flex-start; background:#f0f8ff; color:#5aabb8; border-bottom-left-radius:4px; }
+  .chat-msg .msg-label { font-size:10px; font-weight:600; margin-bottom:2px; opacity:0.7; }
+  .chat-msg.pet .msg-label { color:#87ceeb; }
+  .chat-msg.user .msg-label { color:rgba(255,255,255,0.8); }
+  .chat-msg.system { align-self:center; background:#f8f0ff; color:#a78bfa; border-radius:12px; font-size:12px; text-align:center; padding:6px 14px; }
+  .chat-typing { align-self:flex-start; padding:10px 16px; background:#f0f8ff; border-radius:16px; border-bottom-left-radius:4px; display:none; gap:4px; align-items:center; }
+  .chat-typing.show { display:flex; }
+  .chat-typing .dot { width:6px; height:6px; background:#87ceeb; border-radius:50%; animation:tD 1s ease-in-out infinite; }
+  .chat-typing .dot:nth-child(2){animation-delay:0.15s;} .chat-typing .dot:nth-child(3){animation-delay:0.3s;}
+  @keyframes tD { 0%,60%,100%{transform:translateY(0);opacity:0.4;}30%{transform:translateY(-6px);opacity:1;} }
+
+  .prop-bar { display:flex; gap:6px; padding:8px 16px; overflow-x:auto; scrollbar-width:none; border-top:1px solid #f0f0f0; }
+  .prop-bar::-webkit-scrollbar { display:none; }
+  .prop-btn { width:40px; height:40px; border-radius:12px; border:2px solid #e8f4f8; background:white; font-size:20px; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; }
+  .prop-btn:hover { border-color:#87ceeb; transform:scale(1.08); }
+  .prop-btn:active { transform:scale(0.95); }
+  .prop-btn.cooldown { opacity:0.4; pointer-events:none; }
+  .prop-btn .prop-tip { position:absolute; bottom:-22px; left:50%; transform:translateX(-50%); font-size:10px; color:#5aabb8; white-space:nowrap; opacity:0; transition:opacity 0.2s; pointer-events:none; background:white; padding:1px 6px; border-radius:4px; box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+  .prop-btn:hover .prop-tip { opacity:1; }
+
+  .chat-input-area { display:flex; gap:8px; padding:12px 16px; border-top:1px solid #e8f4f8; }
+  .chat-input { flex:1; padding:12px 16px; border:2px solid #e8f4f8; border-radius:16px; font-size:14px; color:#333; outline:none; font-family:inherit; transition:border-color 0.3s; }
+  .chat-input:focus { border-color:#87ceeb; }
+  .chat-input::placeholder { color:#b8d4dc; }
+  .chat-send { width:44px; height:44px; border-radius:50%; border:none; background:linear-gradient(135deg,#87ceeb,#6bb8d6); color:white; font-size:18px; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; }
+  .chat-send:hover { transform:scale(1.1); box-shadow:0 4px 12px rgba(135,206,235,0.4); }
+  .chat-voice-btn { width:44px; height:44px; border-radius:50%; border:2px solid #e8f4f8; background:white; color:#5aabb8; font-size:18px; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; }
+  .chat-voice-btn:hover { border-color:#87ceeb; background:#f0f8ff; }
+  .chat-voice-btn.recording { border-color:#ff6b6b; background:#fff0f0; color:#ff6b6b; animation:pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.08);} }
+
+  /* ===== 操作按钮栏 ===== */
+  #action-bar { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:10px; z-index:190; transition:bottom 0.4s; }
+  #action-bar.chat-open { bottom:360px; }
+  .action-btn { width:50px; height:50px; border-radius:50%; border:none; background:rgba(255,255,255,0.85); backdrop-filter:blur(10px); box-shadow:0 4px 15px rgba(100,180,210,0.15); cursor:pointer; font-size:22px; display:flex; align-items:center; justify-content:center; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); position:relative; }
+  .action-btn:hover { transform:translateY(-3px) scale(1.08); box-shadow:0 6px 20px rgba(100,180,210,0.25); }
+  .action-btn:active { transform:translateY(-1px) scale(0.95); }
+  .action-btn .tooltip { position:absolute; bottom:-26px; left:50%; transform:translateX(-50%); font-size:10px; color:#5aabb8; white-space:nowrap; opacity:0; transition:opacity 0.2s; pointer-events:none; }
+  .action-btn:hover .tooltip { opacity:1; }
+  .action-btn.chat-toggle { background:linear-gradient(135deg,#87ceeb,#6bb8d6); color:white; width:56px; height:56px; font-size:26px; }
+
+  .cloud-deco { position:fixed; background:rgba(255,255,255,0.4); border-radius:50%; pointer-events:none; }
+  .touch-ripple { position:fixed; border-radius:50%; border:3px solid rgba(135,206,235,0.6); pointer-events:none; z-index:300; animation:rE 0.8s ease-out forwards; }
+  @keyframes rE { 0%{width:0;height:0;opacity:1;}100%{width:120px;height:120px;opacity:0;margin-left:-60px;margin-top:-60px;} }
+  @keyframes floatCloud { 0%{transform:translateX(-200px);}100%{transform:translateX(calc(100vw + 200px));} }
+</style>
+</head>
+<body class="scene-default">
+
+<div class="scene-particles" id="scene-particles"></div>
+
+<div class="cloud-deco" style="width:120px;height:40px;top:10%;left:5%;animation:floatCloud 20s linear infinite;">
+  <div style="position:absolute;width:50px;height:50px;background:inherit;border-radius:50%;top:-25px;left:20px;"></div>
+  <div style="position:absolute;width:40px;height:40px;background:inherit;border-radius:50%;top:-15px;left:55px;"></div>
+</div>
+<div class="cloud-deco" style="width:100px;height:35px;top:20%;right:10%;animation:floatCloud 25s linear infinite reverse;">
+  <div style="position:absolute;width:45px;height:45px;background:inherit;border-radius:50%;top:-22px;left:15px;"></div>
+  <div style="position:absolute;width:35px;height:35px;background:inherit;border-radius:50%;top:-12px;left:48px;"></div>
+</div>
+
+<div id="status-bar">
+  <div class="stat-item"><span class="stat-icon">🐟</span><div class="stat-bar-bg"><div class="stat-bar-fill hunger" id="hunger-bar" style="width:80%"></div></div></div>
+  <div class="stat-item"><span class="stat-icon">💖</span><div class="stat-bar-bg"><div class="stat-bar-fill happy" id="happy-bar" style="width:80%"></div></div></div>
+  <div class="stat-item"><span class="stat-icon">⚡</span><div class="stat-bar-bg"><div class="stat-bar-fill energy" id="energy-bar" style="width:80%"></div></div></div>
+  <div class="stat-item" style="font-weight:600;" id="mood-text">心情: 开心</div>
+  <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()" title="音效开关">🔊</button>
+  <button class="sound-toggle" id="voice-toggle" onclick="toggleVoicePanel()" title="语音设置" style="margin-left:2px;">🗣️</button>
+</div>
+
+<!-- 语音设置面板 -->
+<div id="voice-panel" style="display:none;position:fixed;top:50px;right:10px;width:280px;background:white;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:16px;z-index:9999;font-size:13px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <span style="font-weight:700;color:#5aabb8;">🗣️ 语音设置</span>
+    <button onclick="toggleVoicePanel()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#999;">✕</button>
+  </div>
+  <div style="margin-bottom:10px;">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+      <input type="checkbox" id="edge-tts-switch" checked onchange="edgeTTSEnabled=this.checked" style="width:16px;height:16px;">
+      <span>Edge TTS 高品质语音（推荐）</span>
+    </label>
+    <div style="font-size:11px;color:#999;margin-left:24px;">微软神经网络语音，免费、音质接近真人</div>
+  </div>
+  <div style="margin-bottom:10px;">
+    <div style="font-weight:600;margin-bottom:4px;">选择声音：</div>
+    <select id="voice-select" onchange="edgeTTSVoice=this.value" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;">
+    </select>
+  </div>
+  <div style="margin-bottom:10px;">
+    <div style="font-weight:600;margin-bottom:4px;">语速：<span id="rate-val">正常</span></div>
+    <input type="range" id="rate-slider" min="-50" max="50" value="0" oninput="edgeTTSRate=(this.value>=0?'+':'')+this.value+'%';document.getElementById('rate-val').textContent=this.value==0?'正常':this.value>0?'快 '+this.value+'%':'慢 '+Math.abs(this.value)+'%'" style="width:100%;">
+  </div>
+  <div style="margin-bottom:10px;">
+    <div style="font-weight:600;margin-bottom:4px;">音调：<span id="pitch-val">正常</span></div>
+    <input type="range" id="pitch-slider" min="-50" max="50" value="0" oninput="edgeTTSPitch=(this.value>=0?'+':'')+this.value+'Hz';document.getElementById('pitch-val').textContent=this.value==0?'正常':this.value>0?'高 '+this.value+'Hz':'低 '+Math.abs(this.value)+'Hz'" style="width:100%;">
+  </div>
+  <button onclick="testVoice()" style="width:100%;padding:8px;background:linear-gradient(135deg,#87ceeb,#5aabb8);color:white;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-weight:600;">🎤 试听一下</button>
+</div>
+
+<div id="pet-container">
+  <div class="speech-bubble" id="speech-bubble">喵~</div>
+  <div class="emotion-aura" id="emotion-aura"></div>
+  <div class="pet-body">
+    <div class="pet-ear-left"></div><div class="pet-ear-right"></div>
+    <div class="pet-head" id="pet-head">
+      <div class="pet-eyes">
+        <div class="pet-eye"><div class="eye-open"></div><div class="eye-happy"></div><div class="eye-sleepy"></div><div class="eye-love">❤️</div><div class="eye-sad"></div><div class="eye-sparkle"></div></div>
+        <div class="pet-eye"><div class="eye-open"></div><div class="eye-happy"></div><div class="eye-sleepy"></div><div class="eye-love">❤️</div><div class="eye-sad"></div><div class="eye-sparkle"></div></div>
+      </div>
+      <div class="pet-blush-left"></div><div class="pet-blush-right"></div>
+      <div class="pet-nose"></div>
+      <div class="pet-mouth" id="pet-mouth">
+        <div class="m-happy"></div><div class="m-eating"></div><div class="m-open"></div><div class="m-excited"></div><div class="m-sad"></div><div class="m-meow"></div>
+      </div>
+      <div class="pet-whiskers"><div class="whisker l1"></div><div class="whisker l2"></div><div class="whisker l3"></div><div class="whisker r1"></div><div class="whisker r2"></div><div class="whisker r3"></div></div>
+    </div>
+    <div class="pet-main-body"></div><div class="pet-glow"></div>
+    <div class="pet-paw-left"></div><div class="pet-paw-right"></div>
+    <div class="pet-tail"></div><div class="pet-shadow"></div>
+  </div>
+  <div class="pet-voice-wave" id="pet-voice-wave"><div class="pbar"></div><div class="pbar"></div><div class="pbar"></div><div class="pbar"></div><div class="pbar"></div></div>
+  <div class="name-tag">☁️ 小云朵</div>
+</div>
+
+<div id="action-bar">
+  <button class="action-btn" onclick="feedPet()">🐟<span class="tooltip">喂食</span></button>
+  <button class="action-btn" onclick="playWithPet()">🎾<span class="tooltip">玩耍</span></button>
+  <button class="action-btn" onclick="petTheCat()">🤗<span class="tooltip">抚摸</span></button>
+  <button class="action-btn" onclick="letSleep()">💤<span class="tooltip">睡觉</span></button>
+  <button class="action-btn" onclick="makeJump()">⬆️<span class="tooltip">跳跃</span></button>
+  <button class="action-btn chat-toggle" onclick="toggleChat()">💬<span class="tooltip">聊天</span></button>
+</div>
+
+<div id="chat-panel">
+  <div class="chat-tabs" id="chat-tabs">
+    <button class="chat-tab active" data-scene="free" onclick="switchScene('free',this)">💬 自由聊天</button>
+    <button class="chat-tab" data-scene="comfort" onclick="switchScene('comfort',this)">🫂 安慰陪伴</button>
+    <button class="chat-tab" data-scene="story" onclick="switchScene('story',this)">📖 讲故事</button>
+    <button class="chat-tab" data-scene="game" onclick="switchScene('game',this)">🎮 猜谜游戏</button>
+    <button class="chat-tab" data-scene="diary" onclick="switchScene('diary',this)">📝 心情日记</button>
+    <button class="chat-tab" data-scene="daily" onclick="switchScene('daily',this)">☀️ 日常互动</button>
+  </div>
+  <div class="scene-bar" id="scene-bar">
+    <button class="scene-btn active" data-bg="default" onclick="switchBg('default',this)">🌤️<span class="scene-tip">默认天空</span></button>
+    <button class="scene-btn" data-bg="starry" onclick="switchBg('starry',this)">🌌<span class="scene-tip">星空</span></button>
+    <button class="scene-btn" data-bg="ocean" onclick="switchBg('ocean',this)">🌊<span class="scene-tip">海洋</span></button>
+    <button class="scene-btn" data-bg="rain" onclick="switchBg('rain',this)">🌧️<span class="scene-tip">雨天</span></button>
+    <button class="scene-btn" data-bg="forest" onclick="switchBg('forest',this)">🌲<span class="scene-tip">森林</span></button>
+    <button class="scene-btn" data-bg="sunset" onclick="switchBg('sunset',this)">🌅<span class="scene-tip">日落</span></button>
+    <button class="scene-btn" data-bg="sakura" onclick="switchBg('sakura',this)">🌸<span class="scene-tip">樱花</span></button>
+    <button class="scene-btn" data-bg="snow" onclick="switchBg('snow',this)">❄️<span class="scene-tip">雪天</span></button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-typing" id="chat-typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  <div class="prop-bar" id="prop-bar">
+    <button class="prop-btn" data-prop="fish" onclick="useProp('fish',this)">🐟<span class="prop-tip">小鱼干</span></button>
+    <button class="prop-btn" data-prop="yarn" onclick="useProp('yarn',this)">🧶<span class="prop-tip">毛线球</span></button>
+    <button class="prop-btn" data-prop="blanket" onclick="useProp('blanket',this)">🛏️<span class="prop-tip">小毯子</span></button>
+    <button class="prop-btn" data-prop="mirror" onclick="useProp('mirror',this)">🪞<span class="prop-tip">小镜子</span></button>
+    <button class="prop-btn" data-prop="musicbox" onclick="useProp('musicbox',this)">🎵<span class="prop-tip">音乐盒</span></button>
+    <button class="prop-btn" data-prop="storybook" onclick="useProp('storybook',this)">📖<span class="prop-tip">故事书</span></button>
+    <button class="prop-btn" data-prop="umbrella" onclick="useProp('umbrella',this)">☂️<span class="prop-tip">小雨伞</span></button>
+    <button class="prop-btn" data-prop="mint" onclick="useProp('mint',this)">🍃<span class="prop-tip">薄荷叶</span></button>
+  </div>
+  <div class="chat-input-area">
+    <input class="chat-input" id="chat-input" placeholder="和小云朵说点什么..." onkeydown="if(event.key==='Enter')sendMessage()">
+    <button class="chat-voice-btn" id="voice-btn" onclick="toggleVoice()" title="语音输入">🎤</button>
+    <button class="chat-send" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<script>
+// ===== 宠物状态 =====
+const pet = {
+  x: window.innerWidth/2-90, y: window.innerHeight/2-100,
+  hunger:80, happy:80, energy:80, state:'idle',
+  isDragging:false, dragOffsetX:0, dragOffsetY:0,
+  targetX:0, targetY:0, walkTimer:0, blinkTimer:0, autoTimer:0, speechTimer:0,
+  isSpeaking:false
+};
+const C = document.getElementById('pet-container');
+const SB = document.getElementById('speech-bubble');
+const PH = document.getElementById('pet-head');
+const VW = document.getElementById('pet-voice-wave');
+const CI = document.getElementById('chat-input');
+const CM = document.getElementById('chat-messages');
+const CT = document.getElementById('chat-typing');
+const EA = document.getElementById('emotion-aura');
+C.style.left=pet.x+'px'; C.style.top=pet.y+'px';
+
+// ===== 默认浮动粒子 =====
+for(let i=0;i<12;i++){const p=document.createElement('div');p.className='bg-particle';const s=Math.random()*8+3;p.style.width=s+'px';p.style.height=s+'px';p.style.left=Math.random()*100+'vw';p.style.background=['#87ceeb','#b8e986','#ffb347','#a78bfa','#ff9ec6'][~~(Math.random()*5)];p.style.animationDuration=(Math.random()*15+10)+'s';p.style.animationDelay=(Math.random()*10)+'s';document.body.appendChild(p);}
+document.addEventListener('mousedown',e=>{const r=document.createElement('div');r.className='touch-ripple';r.style.left=e.clientX+'px';r.style.top=e.clientY+'px';document.body.appendChild(r);setTimeout(()=>r.remove(),800);});
+
+// =============================================
+// ===== 动态场景背景系统 =====
+// =============================================
+let currentBg = 'default';
+let sceneParticles = [];
+const SP = document.getElementById('scene-particles');
+
+function switchBg(scene, btn) {
+  if (scene === currentBg) return;
+  currentBg = scene;
+  document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.body.className = 'scene-' + scene;
+  clearSceneParticles();
+  createSceneParticles(scene);
+  playSceneSound(scene);
+  setScenePose(scene);
+  const names = {default:'天空',starry:'星空',ocean:'海洋',rain:'雨天',forest:'森林',sunset:'日落',sakura:'樱花',snow:'雪天'};
+  addMsg('system', '场景已切换到' + (names[scene]||scene) + '~');
+}
+
+function clearSceneParticles() {
+  sceneParticles.forEach(p => { if(p && p.parentNode) p.parentNode.removeChild(p); });
+  sceneParticles = [];
+  const wc = document.querySelector('.wave-container'); if(wc) wc.remove();
+  const rc = document.querySelector('.rain-container'); if(rc) rc.remove();
+  const sg = document.querySelector('.sunset-glow'); if(sg) sg.remove();
+}
+
+function createSceneParticles(scene) {
+  switch(scene) {
+    case 'starry':
+      for (let i = 0; i < 60; i++) {
+        const star = document.createElement('div'); star.className = 'star';
+        const size = Math.random()*3+1; star.style.width=size+'px'; star.style.height=size+'px';
+        star.style.left=Math.random()*100+'vw'; star.style.top=Math.random()*70+'vh';
+        star.style.setProperty('--dur',(Math.random()*3+1.5)+'s');
+        star.style.setProperty('--delay',(Math.random()*3)+'s');
+        SP.appendChild(star); sceneParticles.push(star);
+      } break;
+    case 'ocean':
+      const waveCont = document.createElement('div'); waveCont.className = 'wave-container';
+      for (let i=0;i<3;i++){const w=document.createElement('div');w.className='wave';waveCont.appendChild(w);}
+      document.body.appendChild(waveCont);
+      for (let i=0;i<15;i++){const b=document.createElement('div');b.className='bg-particle';const s=Math.random()*6+2;b.style.width=s+'px';b.style.height=s+'px';b.style.left=Math.random()*100+'vw';b.style.background='rgba(255,255,255,0.5)';b.style.animationDuration=(Math.random()*10+8)+'s';b.style.animationDelay=(Math.random()*8)+'s';SP.appendChild(b);sceneParticles.push(b);}
+      break;
+    case 'rain':
+      const rainCont = document.createElement('div'); rainCont.className = 'rain-container';
+      for (let i=0;i<80;i++){const d=document.createElement('div');d.className='raindrop';d.style.left=Math.random()*100+'%';d.style.height=(Math.random()*20+10)+'px';d.style.setProperty('--dur',(Math.random()*0.5+0.5)+'s');d.style.setProperty('--delay',(Math.random()*2)+'s');rainCont.appendChild(d);}
+      document.body.appendChild(rainCont); break;
+    case 'forest':
+      for (let i=0;i<20;i++){const l=document.createElement('div');l.className='leaf';l.textContent=['🍃','🌿','🍂'][~~(Math.random()*3)];l.style.left=Math.random()*100+'vw';l.style.setProperty('--dur',(Math.random()*8+6)+'s');l.style.setProperty('--delay',(Math.random()*8)+'s');l.style.setProperty('--size',(Math.random()*10+14)+'px');SP.appendChild(l);sceneParticles.push(l);}
+      break;
+    case 'sunset':
+      const glow=document.createElement('div');glow.className='sunset-glow';document.body.appendChild(glow);
+      for (let i=0;i<10;i++){const p=document.createElement('div');p.className='bg-particle';const s=Math.random()*6+3;p.style.width=s+'px';p.style.height=s+'px';p.style.left=Math.random()*100+'vw';p.style.background=['rgba(255,160,48,0.5)','rgba(255,100,50,0.4)','rgba(255,200,100,0.4)'][~~(Math.random()*3)];p.style.animationDuration=(Math.random()*12+8)+'s';p.style.animationDelay=(Math.random()*8)+'s';SP.appendChild(p);sceneParticles.push(p);}
+      break;
+    case 'sakura':
+      for (let i=0;i<25;i++){const p=document.createElement('div');p.className='petal';p.style.left=Math.random()*100+'vw';p.style.setProperty('--dur',(Math.random()*6+5)+'s');p.style.setProperty('--delay',(Math.random()*6)+'s');p.style.setProperty('--size',(Math.random()*8+6)+'px');SP.appendChild(p);sceneParticles.push(p);}
+      break;
+    case 'snow':
+      for (let i=0;i<40;i++){const f=document.createElement('div');f.className='snowflake';f.style.left=Math.random()*100+'vw';f.style.setProperty('--dur',(Math.random()*6+4)+'s');f.style.setProperty('--delay',(Math.random()*6)+'s');f.style.setProperty('--size',(Math.random()*5+3)+'px');SP.appendChild(f);sceneParticles.push(f);}
+      break;
+  }
+}
+
+function setScenePose(scene) {
+  if (pet.state==='sleeping') return;
+  clearMod();
+  switch(scene) {
+    case 'starry': C.classList.add('lying'); setExpr('sleepy'); showBubble('哇...星星好美喵~'); break;
+    case 'rain': C.classList.add('snuggling'); setExpr('sad'); showBubble('下雨了...过来让我靠靠~'); break;
+    case 'forest': C.classList.add('listening'); setExpr('open'); showBubble('好多树呀! 好新奇喵~'); break;
+    case 'ocean': C.classList.add('happy-t'); setExpr('sparkle'); showBubble('大海! 好想玩水喵~'); break;
+    case 'sunset': setExpr('sleepy'); showBubble('夕阳好美...好温暖喵~'); break;
+    case 'sakura': C.classList.add('happy-t','blushing'); setExpr('love'); showBubble('好漂亮的花! 喵~'); break;
+    case 'snow': C.classList.add('listening'); setExpr('open'); showBubble('雪! 好冷但好漂亮喵~'); break;
+    default: setExpr('happy'); break;
+  }
+  setTimeout(()=>{if(pet.state!=='sleeping'){clearMod();setState('idle');}},3000);
+}
+
+// =============================================
+// ===== 情境音效系统（Web Audio API）=====
+// =============================================
+let audioCtx = null;
+let soundEnabled = true;
+let currentSoundNodes = [];
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function stopAllSounds() {
+  currentSoundNodes.forEach(n => { try{n.stop?n.stop():n.disconnect();}catch(e){} });
+  currentSoundNodes = [];
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('sound-toggle');
+  btn.textContent = soundEnabled ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !soundEnabled);
+  if (!soundEnabled) stopAllSounds();
+}
+
+function playSceneSound(scene) {
+  if (!soundEnabled) return;
+  initAudio(); stopAllSounds();
+  switch(scene) {
+    case 'forest': playBirdSound(); break;
+    case 'rain': playRainSound(); break;
+    case 'ocean': playWaveSound(); break;
+    case 'starry': playCricketSound(); break;
+    case 'snow': case 'sunset': case 'sakura': playWindSound(); break;
+  }
+}
+
+// 鸟鸣（森林）
+function playBirdSound() {
+  if (!audioCtx||!soundEnabled) return;
+  const chirp = () => {
+    if (!soundEnabled||currentBg!=='forest') return;
+    const osc=audioCtx.createOscillator(), gain=audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination); osc.type='sine';
+    const bf=2000+Math.random()*2000;
+    osc.frequency.setValueAtTime(bf,audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(bf*1.5,audioCtx.currentTime+0.1);
+    osc.frequency.exponentialRampToValueAtTime(bf*0.8,audioCtx.currentTime+0.2);
+    gain.gain.setValueAtTime(0,audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.03,audioCtx.currentTime+0.05);
+    gain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.25);
+    osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime+0.3);
+    currentSoundNodes.push(osc);
+    setTimeout(chirp, 800+Math.random()*2000);
+  }; chirp();
+}
+
+// 雨声（白噪声）
+function playRainSound() {
+  if (!audioCtx||!soundEnabled) return;
+  const bs=audioCtx.sampleRate*2, buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<bs;i++) d[i]=Math.random()*2-1;
+  const src=audioCtx.createBufferSource(); src.buffer=buf; src.loop=true;
+  const flt=audioCtx.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=800;
+  const g=audioCtx.createGain(); g.gain.value=0.06;
+  src.connect(flt); flt.connect(g); g.connect(audioCtx.destination); src.start();
+  currentSoundNodes.push(src);
+}
+
+// 海浪（低频振荡+白噪声）
+function playWaveSound() {
+  if (!audioCtx||!soundEnabled) return;
+  const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
+  osc.type='sine'; osc.frequency.value=0.15; g.gain.value=0;
+  osc.connect(g); g.connect(audioCtx.destination);
+  const lfo=audioCtx.createOscillator(), lg=audioCtx.createGain();
+  lfo.frequency.value=0.1; lg.gain.value=0.04;
+  lfo.connect(lg); lg.connect(g.gain); lfo.start(); osc.start();
+  currentSoundNodes.push(osc,lfo);
+  const bs=audioCtx.sampleRate*2, buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<bs;i++) d[i]=Math.random()*2-1;
+  const n=audioCtx.createBufferSource(); n.buffer=buf; n.loop=true;
+  const nf=audioCtx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=400;
+  const ng=audioCtx.createGain(); ng.gain.value=0.04;
+  n.connect(nf); nf.connect(ng); ng.connect(audioCtx.destination); n.start();
+  currentSoundNodes.push(n);
+}
+
+// 虫鸣（高频振荡）
+function playCricketSound() {
+  if (!audioCtx||!soundEnabled) return;
+  const chirp = () => {
+    if (!soundEnabled||currentBg!=='starry') return;
+    const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
+    osc.connect(g); g.connect(audioCtx.destination); osc.type='sine';
+    osc.frequency.value=4000+Math.random()*1000;
+    g.gain.setValueAtTime(0,audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0.02,audioCtx.currentTime+0.02);
+    for(let i=0;i<6;i++){g.gain.setValueAtTime(0.02,audioCtx.currentTime+0.02+i*0.06);g.gain.setValueAtTime(0,audioCtx.currentTime+0.02+i*0.06+0.03);}
+    osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime+0.5);
+    currentSoundNodes.push(osc);
+    setTimeout(chirp, 1500+Math.random()*3000);
+  }; chirp();
+}
+
+// 风声（滤波白噪声）
+function playWindSound() {
+  if (!audioCtx||!soundEnabled) return;
+  const bs=audioCtx.sampleRate*2, buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<bs;i++) d[i]=Math.random()*2-1;
+  const src=audioCtx.createBufferSource(); src.buffer=buf; src.loop=true;
+  const flt=audioCtx.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=300; flt.Q.value=0.5;
+  const g=audioCtx.createGain(); g.gain.value=0.03;
+  src.connect(flt); flt.connect(g); g.connect(audioCtx.destination); src.start();
+  currentSoundNodes.push(src);
+}
+
+// =============================================
+// ===== 情绪光环系统 =====
+// =============================================
+let emotionAuraTimer = null;
+
+const emotionKeywords = {
+  happy: ['开心','高兴','快乐','幸福','棒','太好了','哈哈','嘻嘻','耶','喜欢','爱','好棒','真棒','最棒','好萌','萌','可爱','成功','赢了','通过','完成','惊喜','兴奋','满足','感动','温暖','甜蜜','笑','庆祝','生日','派对','礼物'],
+  sad: ['难过','伤心','不开心','哭','难受','郁闷','烦','累','辛苦','失望','失败','做不好','搞砸','出错','吵架','争吵','分手','孤独','寂寞','焦虑','害怕','委屈','痛苦','绝望','崩溃','不被理解','没人懂','讨厌自己','恨自己','想哭','忍不住','撑不住','好难','不公平','失去','去世','欺负','嘲笑'],
+  comfort: ['没关系','别担心','放心','会好的','陪你','拥抱','温暖','安慰','谢谢你','感谢','有你真好','好多了','好一点','谢谢小云朵','理解','支持','鼓励'],
+  excited: ['哇','太厉害了','不可思议','震惊','惊喜','天哪','厉害','牛','酷','帅','牛啊','太强了','超级','无敌','绝了','神了','逆天','好嗨','好激动'],
+  calm: ['安静','平静','放松','舒服','惬意','悠闲','宁静','淡然','从容','安心','踏实','祥和','冥想','呼吸']
+};
+
+function detectEmotion(text) {
+  const tl=text.toLowerCase(); let maxCount=0, detected=null;
+  for (const [emotion,keywords] of Object.entries(emotionKeywords)) {
+    const count=keywords.filter(w=>tl.includes(w)).length;
+    if(count>maxCount){maxCount=count;detected=emotion;}
+  }
+  return detected;
+}
+
+function showEmotionAura(emotion) {
+  if(!emotion){hideEmotionAura();return;}
+  EA.className='emotion-aura active aura-'+emotion;
+  clearTimeout(emotionAuraTimer);
+  spawnEmotionParticles(emotion);
+  emotionAuraTimer=setTimeout(hideEmotionAura,5000);
+}
+
+function hideEmotionAura() { EA.classList.remove('active'); }
+
+function spawnEmotionParticles(emotion) {
+  const colors={happy:['#ffd700','#ffb347','#ffe066','#ff9ec6'],sad:['#6b9fff','#87ceeb','#a0c4ff','#b8d4ff'],comfort:['#ffb6c1','#ff9ec6','#ffd4e5','#ffc0cb'],excited:['#ff6b6b','#ffd700','#87ceeb','#b8e986','#ff9ec6'],calm:['#ffffff','#e8f4f8','#d4eaf7','#f0e6ff']};
+  const pc=colors[emotion]||colors.calm;
+  for(let i=0;i<8;i++){setTimeout(()=>{
+    const p=document.createElement('div');p.className='emotion-particle';
+    const s=Math.random()*6+3;p.style.width=s+'px';p.style.height=s+'px';
+    p.style.background=pc[~~(Math.random()*pc.length)];
+    p.style.left=(90+Math.random()*40)+'px';p.style.top=(40+Math.random()*80)+'px';
+    p.style.setProperty('--dx',(Math.random()*60-30)+'px');p.style.setProperty('--dy',(Math.random()*-40-10)+'px');
+    p.style.setProperty('--dx2',(Math.random()*80-40)+'px');p.style.setProperty('--dy2',(Math.random()*-60-20)+'px');
+    C.appendChild(p);setTimeout(()=>p.remove(),2000);
+  },i*200);}
+}
+
+// =============================================
+// ===== 拖拽系统 =====
+// =============================================
+C.addEventListener('mousedown',e=>{if(pet.state==='sleeping')return;pet.isDragging=true;pet.dragOffsetX=e.clientX-pet.x;pet.dragOffsetY=e.clientY-pet.y;C.style.cursor='grabbing';clearMod();setState('idle');});
+document.addEventListener('mousemove',e=>{if(!pet.isDragging)return;pet.x=Math.max(0,Math.min(window.innerWidth-180,e.clientX-pet.dragOffsetX));pet.y=Math.max(0,Math.min(window.innerHeight-200,e.clientY-pet.dragOffsetY));C.style.left=pet.x+'px';C.style.top=pet.y+'px';});
+document.addEventListener('mouseup',()=>{if(pet.isDragging){pet.isDragging=false;C.style.cursor='grab';}});
+C.addEventListener('touchstart',e=>{if(pet.state==='sleeping')return;pet.isDragging=true;const t=e.touches[0];pet.dragOffsetX=t.clientX-pet.x;pet.dragOffsetY=t.clientY-pet.y;clearMod();setState('idle');},{passive:true});
+document.addEventListener('touchmove',e=>{if(!pet.isDragging)return;const t=e.touches[0];pet.x=Math.max(0,Math.min(window.innerWidth-180,t.clientX-pet.dragOffsetX));pet.y=Math.max(0,Math.min(window.innerHeight-200,t.clientY-pet.dragOffsetY));C.style.left=pet.x+'px';C.style.top=pet.y+'px';},{passive:true});
+document.addEventListener('touchend',()=>{pet.isDragging=false;});
+
+// =============================================
+// ===== 修饰符与表情系统 =====
+// =============================================
+function clearMod(){C.classList.remove('jumping','walking','sleeping','eating','excited','blushing','happy-t','sad-t','sad-w','waving','begging','listening','comforting','sitting','lying','snuggling','rolling','stretching','shaking','thinking');}
+function setExpr(e){
+  ['eye-open','eye-happy','eye-sleepy','eye-love','eye-sad','eye-sparkle','m-happy','m-eating','m-open','m-excited','m-sad','m-meow'].forEach(c=>document.querySelectorAll('.'+c).forEach(el=>el.style.display='none'));
+  const map={happy:['eye-happy','m-happy'],open:['eye-open','m-happy'],love:['eye-love','m-open'],sad:['eye-sad','m-sad'],sleepy:['eye-sleepy','m-happy'],eating:['eye-happy','m-eating'],excited:['eye-sparkle','m-excited'],meow:['eye-open','m-meow'],sparkle:['eye-sparkle','m-open']};
+  (map[e]||map.happy).forEach(c=>{const el=document.querySelector('.'+c);if(el)el.style.display='block';});
+}
+function setState(s){
+  if(pet.state===s)return;clearMod();pet.state=s;
+  const map={idle:'happy',walking:'happy',sleeping:'sleepy',eating:'eating',jumping:'excited',playing:'sparkle',excited:'excited',loved:'love',listening:'open',comforting:'sad',meowing:'meow',begging:'open',waving:'happy',sad:'sad'};
+  setExpr(map[s]||'happy');
+  if(s==='walking')C.classList.add('walking');
+  if(s==='sleeping')C.classList.add('sleeping');
+  if(s==='eating')C.classList.add('eating');
+  if(s==='excited')C.classList.add('excited');
+  if(s==='loved')C.classList.add('blushing','happy-t');
+  if(s==='listening')C.classList.add('listening');
+  if(s==='comforting')C.classList.add('comforting','blushing');
+  if(s==='begging')C.classList.add('begging');
+  if(s==='waving')C.classList.add('waving','happy-t');
+  if(s==='sad')C.classList.add('sad-t','sad-w');
+}
+
+// =============================================
+// ===== 语音气泡与粒子效果 =====
+// =============================================
+function showBubble(t){SB.textContent=t;SB.classList.add('show');clearTimeout(pet.speechTimer);pet.speechTimer=setTimeout(()=>SB.classList.remove('show'),Math.max(2500,t.length*400));}
+function spawnH(n){for(let i=0;i<n;i++)setTimeout(()=>{const h=document.createElement('div');h.className='heart-particle';h.textContent=['💖','💕','💗','✨','⭐'][~~(Math.random()*5)];h.style.left=(70+Math.random()*40)+'px';h.style.top=(20+Math.random()*30)+'px';h.style.setProperty('--dx',(Math.random()*40-20)+'px');h.style.setProperty('--dx2',(Math.random()*60-30)+'px');C.appendChild(h);setTimeout(()=>h.remove(),1500);},i*150);}
+function spawnZ(){const z=document.createElement('div');z.className='zzz';z.textContent='Z';z.style.left=(100+Math.random()*20)+'px';z.style.top='10px';z.style.fontSize=(14+Math.random()*10)+'px';C.appendChild(z);setTimeout(()=>z.remove(),2000);}
+function spawnS(n){for(let i=0;i<n;i++)setTimeout(()=>{const s=document.createElement('div');s.className='sparkle';s.style.left=(40+Math.random()*100)+'px';s.style.top=(20+Math.random()*120)+'px';C.appendChild(s);setTimeout(()=>s.remove(),1000);},i*80);}
+function spawnMN(n){for(let i=0;i<n;i++)setTimeout(()=>{const m=document.createElement('div');m.className='music-note';m.textContent=['♪','♫','♬','🎵'][~~(Math.random()*4)];m.style.left=(50+Math.random()*80)+'px';m.style.top=(10+Math.random()*20)+'px';m.style.setProperty('--dx',(Math.random()*50-25)+'px');m.style.setProperty('--dx2',(Math.random()*70-35)+'px');C.appendChild(m);setTimeout(()=>m.remove(),2000);},i*200);}
+function spawnSW(){const s=document.createElement('div');s.className='sweat-drop';s.textContent='💧';s.style.left='110px';s.style.top='25px';C.appendChild(s);setTimeout(()=>s.remove(),1000);}
+
+// =============================================
+// ===== 操作按钮功能 =====
+// =============================================
+function feedPet(){if(pet.state==='sleeping'){showBubble('好困...先让我睡会儿嘛~');return;}setState('eating');showBubble('好好吃!真香~');pet.hunger=Math.min(100,pet.hunger+20);pet.happy=Math.min(100,pet.happy+5);updateBars();setTimeout(()=>{spawnS(5);setState('idle');},2000);}
+function playWithPet(){if(pet.state==='sleeping'){showBubble('好困...');return;}if(pet.energy<15){showBubble('太累了...让我休息一下~');return;}setState('playing');showBubble('好好玩!再来再来!');pet.happy=Math.min(100,pet.happy+25);pet.energy=Math.max(0,pet.energy-15);updateBars();let j=0;const i=setInterval(()=>{C.classList.add('jumping');spawnS(3);setTimeout(()=>C.classList.remove('jumping'),600);j++;if(j>=3){clearInterval(i);setTimeout(()=>setState('idle'),600);}},800);}
+function petTheCat(){if(pet.state==='sleeping'){showBubble('咕噜...好舒服~');spawnH(5);pet.happy=Math.min(100,pet.happy+10);updateBars();return;}showBubble('咕噜咕噜~好舒服!');spawnH(8);pet.happy=Math.min(100,pet.happy+15);updateBars();}
+function letSleep(){if(pet.state==='sleeping'){setState('idle');showBubble('啊~睡醒啦!精神满满!');return;}setState('sleeping');showBubble('好困...晚安...Zzz');const i=setInterval(()=>{if(pet.state!=='sleeping'){clearInterval(i);return;}spawnZ();},1500);}
+function makeJump(){if(pet.state==='sleeping'){showBubble('好困...');return;}if(pet.energy<10){showBubble('太累了跳不动了...');return;}setState('jumping');showBubble('耶!跳高高!');pet.happy=Math.min(100,pet.happy+10);pet.energy=Math.max(0,pet.energy-8);updateBars();setTimeout(()=>{C.classList.remove('jumping');setState('idle');},600);}
+function updateBars(){document.getElementById('hunger-bar').style.width=pet.hunger+'%';document.getElementById('happy-bar').style.width=pet.happy+'%';document.getElementById('energy-bar').style.width=pet.energy+'%';const m=document.getElementById('mood-text');if(pet.state==='sleeping')m.textContent='正在睡觉 💤';else if(pet.happy>=70&&pet.hunger>=50)m.textContent='心情: 开心 😊';else if(pet.happy>=40)m.textContent='心情: 一般 😐';else if(pet.happy>=20)m.textContent='心情: 闷闷 😿';else m.textContent='心情: 难过 😢';}
+
+// =============================================
+// ===== 自动行为系统 =====
+// =============================================
+function autoWalk(){if(pet.state==='sleeping'||pet.isDragging)return;pet.targetX=Math.random()*(window.innerWidth-200)+10;pet.targetY=Math.random()*(window.innerHeight-300)+80;setState('walking');}
+function updateWalk(){if(pet.state!=='walking'||pet.isDragging)return;const dx=pet.targetX-pet.x,dy=pet.targetY-pet.y,d=Math.sqrt(dx*dx+dy*dy);if(d<10){setState('idle');return;}pet.x+=(dx/d)*1.5;pet.y+=(dy/d)*1.5;C.style.transform=dx<0?'scaleX(-1)':'scaleX(1)';C.style.left=pet.x+'px';C.style.top=pet.y+'px';}
+function blink(){if(['sleeping','jumping','playing','meowing'].includes(pet.state))return;document.querySelectorAll('.pet-eye').forEach(e=>{e.classList.add('blinking');setTimeout(()=>e.classList.remove('blinking'),200);});}
+function decay(){if(pet.state==='sleeping'){pet.energy=Math.min(100,pet.energy+0.3);pet.hunger=Math.max(0,pet.hunger-0.05);}else{pet.hunger=Math.max(0,pet.hunger-0.08);pet.energy=Math.max(0,pet.energy-0.05);pet.happy=Math.max(0,pet.happy-0.03);}updateBars();}
+let lt=0;
+function loop(ts){const dt=ts-lt;updateWalk();pet.blinkTimer+=dt;if(pet.blinkTimer>3000+Math.random()*2000){blink();pet.blinkTimer=0;}pet.walkTimer+=dt;if(pet.state==='idle'&&pet.walkTimer>5000+Math.random()*5000){autoWalk();pet.walkTimer=0;}pet.autoTimer+=dt;if(pet.autoTimer>10000+Math.random()*8000&&pet.state==='idle'){showBubble(['喵~','想吃鱼鱼~','摸摸我嘛~','今天天气真好~','哼哼~','你在看我吗~'][~~(Math.random()*6)]);pet.autoTimer=0;}lt=ts;requestAnimationFrame(loop);}
+setInterval(decay,500);
+setInterval(()=>{if(pet.state==='idle'&&Math.random()<0.3)spawnS(1);},3000);
+C.addEventListener('dblclick',()=>petTheCat());
+C.addEventListener('click',()=>{if(pet.state==='sleeping')return;spawnS(3);if(Math.random()<0.3){showBubble('嘿嘿~');spawnH(3);}});
+requestAnimationFrame(loop);
+
+// =============================================
+// ===== 宠物反应辅助函数 =====
+// =============================================
+function petReact(mood,action,duration){
+  duration=duration||3500; clearMod();
+  const moodMap={happy:['happy','happy-t'],sad:['sad','sad-t','sad-w'],excited:['excited','excited','happy-t','blushing'],love:['love','blushing','happy-t'],sleepy:['sleepy','sad-t'],hungry:['open','begging','happy-t'],curious:['open','listening'],shy:['sad','blushing']};
+  const m=moodMap[mood]||moodMap.happy;
+  setExpr(m[0]); m.slice(1).forEach(c=>C.classList.add(c));
+  if(mood==='excited')spawnS(5); if(mood==='love')spawnH(8); if(mood==='shy')spawnSW();
+  switch(action){
+    case'wave':C.classList.add('waving','happy-t');setTimeout(()=>C.classList.remove('waving'),2000);break;
+    case'jump':C.classList.add('jumping');setTimeout(()=>C.classList.remove('jumping'),600);break;
+    case'beg':C.classList.add('begging');setTimeout(()=>C.classList.remove('begging'),3000);break;
+    case'nod':PH.style.animation='headNod 0.8s ease-in-out 2';setTimeout(()=>PH.style.animation='',2000);break;
+    case'shake':PH.style.animation='headShake 0.6s ease-in-out 2';setTimeout(()=>PH.style.animation='',1500);break;
+    case'purr':C.classList.add('comforting','blushing');spawnH(5);break;
+    case'eat':feedPet();return;
+    case'sleep':letSleep();return;
+    case'dance':{let b=0;const i=setInterval(()=>{C.classList.add('jumping');spawnS(3);spawnMN(2);setTimeout(()=>C.classList.remove('jumping'),500);b++;if(b>=3)clearInterval(i);},700);break;}
+    case'sing':spawnMN(8);PH.style.animation='headNod 0.8s ease-in-out 3';setTimeout(()=>PH.style.animation='',3000);break;
+    case'sit':C.classList.add('sitting');setTimeout(()=>C.classList.remove('sitting'),3000);break;
+    case'lie':C.classList.add('lying');setTimeout(()=>C.classList.remove('lying'),4000);break;
+    case'snuggle':C.classList.add('snuggling');setTimeout(()=>C.classList.remove('snuggling'),4000);break;
+    case'roll':C.classList.add('rolling');setTimeout(()=>C.classList.remove('rolling'),2000);break;
+    case'stretch':C.classList.add('stretching');setTimeout(()=>C.classList.remove('stretching'),2000);break;
+    case'shakeFur':C.classList.add('shaking');setTimeout(()=>C.classList.remove('shaking'),1500);break;
+  }
+  setTimeout(()=>{clearMod();PH.style.animation='';if(pet.state!=='sleeping'&&pet.state!=='eating')setState('idle');},duration);
+}
+
+// =============================================
+// ===== 宠物语音合成 =====
+// =============================================
+// =============================================
+// ===== Edge TTS 语音合成（微软神经网络语音）=====
+// =============================================
+const EDGE_TTS_CONFIG={
+  WSS_URL:'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1',
+  TOKEN:'6CCD1B8B79B5AB4F0B4C2E9F7E3E8A0',
+  voices:[
+    {id:'zh-CN-XiaoxiaoNeural',name:'晓晓（温柔女声）',tag:'推荐'},
+    {id:'zh-CN-XiaoyiNeural',name:'晓伊（知性女声）',tag:''},
+    {id:'zh-CN-XiaohanNeural',name:'晓涵（甜美女声）',tag:''},
+    {id:'zh-CN-XiaomengNeural',name:'晓梦（可爱女声）',tag:''},
+    {id:'zh-CN-XiaoxuanNeural',name:'晓萱（活泼女声）',tag:''},
+    {id:'zh-CN-XiaozhenNeural',name:'晓甄（温柔女声）',tag:''},
+    {id:'zh-CN-YunxiNeural',name:'云希（阳光男声）',tag:''},
+    {id:'zh-CN-YunjianNeural',name:'云健（成熟男声）',tag:''},
+    {id:'zh-CN-YunyangNeural',name:'云扬（新闻男声）',tag:''}
+  ]
+};
+let edgeTTSEnabled=true;
+let edgeTTSVoice=EDGE_TTS_CONFIG.voices[0].id;
+let edgeTTSRate='+0%';
+let edgeTTSPitch='+0Hz';
+let edgeAudioCtx=null;
+let edgeAudioQueue=[];
+let edgeIsPlaying=false;
+
+// Edge TTS WebSocket 二进制消息头构造
+function makeEdgeHeader(path){
+  const p='Path:'+path;
+  const ts='X-Timestamp:'+new Date().toISOString()+'Z';
+  const cid='Content-Type:application/json; charset=utf-8';
+  const hdr=p+'\r\n'+ts+'\r\n'+cid+'\r\n\r\n';
+  const hdrBuf=new TextEncoder().encode(hdr);
+  const pre=new ArrayBuffer(2);
+  new DataView(pre).setUint16(0,hdrBuf.length);
+  return concatBuf(pre,hdrBuf);
+}
+function makeEdgeAudioHeader(path){
+  const p='Path:'+path;
+  const ts='X-Timestamp:'+new Date().toISOString()+'Z';
+  const ct='Content-Type:audio/mpeg';
+  const hdr=p+'\r\n'+ts+'\r\n'+ct+'\r\n\r\n';
+  const hdrBuf=new TextEncoder().encode(hdr);
+  const pre=new ArrayBuffer(2);
+  new DataView(pre).setUint16(0,hdrBuf.length);
+  return concatBuf(pre,hdrBuf);
+}
+function concatBuf(a,b){
+  const r=new Uint8Array(a.byteLength+b.byteLength);
+  r.set(new Uint8Array(a),0);
+  r.set(new Uint8Array(b),a.byteLength);
+  return r.buffer;
+}
+function str2buf(s){return new TextEncoder().encode(s).buffer;}
+
+// Edge TTS 核心：通过WebSocket获取音频
+function edgeTTSSpeak(text){
+  return new Promise((resolve,reject)=>{
+    if(!text||!text.trim()){resolve(null);return;}
+    const clean=text.replace(/[💖💕✨🎉💤🐟🎾❤️😊😐😢😿🤔💪👋🎤💧♪♫♬🎵🌟🌸❄️🌧️🌊🌲🌅🌌🌤️☂️🛏️🪞🧶🍃📖🎮📝☀️💬🫂⬆️➤]/g,'').replace(/[喵咕噜吧唧~～！!？?。.，,、]{2,}/g,m=>m[0]).trim();
+    if(!clean){resolve(null);return;}
+    const connId=Math.random().toString(36).substring(2,15);
+    const wsUrl=EDGE_TTS_CONFIG.WSS_URL+'?TrustedClientToken='+EDGE_TTS_CONFIG.TOKEN+'&ConnectionId='+connId;
+    let ws;
+    try{ws=new WebSocket(wsUrl);}catch(e){reject(e);return;}
+    const audioChunks=[];
+    const timeout=setTimeout(()=>{try{ws.close();}catch(e){}reject(new Error('Edge TTS 超时'));},15000);
+    ws.binaryType='arraybuffer';
+    ws.onopen=()=>{
+      // 1. 发送配置
+      const cfgMsg=str2buf('X-Timestamp:'+new Date().toISOString()+'Z\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"true"},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}\r\n');
+      ws.send(cfgMsg);
+      // 2. 发送SSML
+      const ssml='<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="zh-CN"><voice name="'+edgeTTSVoice+'"><prosody pitch="'+edgeTTSPitch+'" rate="'+edgeTTSRate+'">'+clean.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</prosody></voice></speak>';
+      const ssmlMsg=str2buf('X-RequestId:'+connId+'\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:'+new Date().toISOString()+'Z\r\nPath:ssml\r\n\r\n'+ssml);
+      ws.send(ssmlMsg);
+    };
+    ws.onmessage=(evt)=>{
+      if(typeof evt.data==='string'){
+        if(evt.data.includes('Path:turn.end')){clearTimeout(timeout);try{ws.close();}catch(e){}}
+      }else{
+        const arr=new Uint8Array(evt.data);
+        if(arr.length>2){
+          const hdrLen=new DataView(arr.buffer).getUint16(0);
+          const hdrStr=new TextDecoder().decode(arr.slice(2,2+hdrLen));
+          if(hdrStr.includes('Path:audio')&&hdrStr.includes('Content-Type:audio/mpeg')){
+            const audioData=arr.slice(2+hdrLen);
+            if(audioData.length>0)audioChunks.push(audioData);
+          }
+        }
+      }
+    };
+    ws.onclose=()=>{
+      clearTimeout(timeout);
+      if(audioChunks.length>0){
+        const totalLen=audioChunks.reduce((s,c)=>s+c.length,0);
+        const merged=new Uint8Array(totalLen);
+        let offset=0;
+        for(const c of audioChunks){merged.set(c,offset);offset+=c.length;}
+        resolve(merged.buffer);
+      }else{resolve(null);}
+    };
+    ws.onerror=(e)=>{clearTimeout(timeout);reject(e);};
+  });
+}
+
+// 播放Edge TTS音频
+async function playEdgeAudio(audioBuf){
+  if(!audioBuf)return;
+  try{
+    const blob=new Blob([audioBuf],{type:'audio/mpeg'});
+    const url=URL.createObjectURL(blob);
+    const audio=new Audio(url);
+    audio.onplay=()=>{pet.isSpeaking=true;VW.classList.add('active');};
+    audio.onended=()=>{pet.isSpeaking=false;VW.classList.remove('active');URL.revokeObjectURL(url);edgeIsPlaying=false;processAudioQueue();};
+    audio.onerror=()=>{pet.isSpeaking=false;VW.classList.remove('active');URL.revokeObjectURL(url);edgeIsPlaying=false;processAudioQueue();};
+    edgeIsPlaying=true;
+    audio.play().catch(()=>{pet.isSpeaking=false;VW.classList.remove('active');edgeIsPlaying=false;processAudioQueue();});
+  }catch(e){pet.isSpeaking=false;VW.classList.remove('active');edgeIsPlaying=false;}
+}
+function processAudioQueue(){
+  if(edgeAudioQueue.length>0&&!edgeIsPlaying){
+    const next=edgeAudioQueue.shift();
+    playEdgeAudio(next);
+  }
+}
+
+// 统一语音接口
+function petSpeak(text){
+  if(!text)return;
+  if(edgeTTSEnabled){
+    edgeTTSSpeak(text).then(buf=>{
+      if(buf){
+        if(edgeIsPlaying){edgeAudioQueue.push(buf);}
+        else{playEdgeAudio(buf);}
+      }else{fallbackSpeak(text);}
+    }).catch(()=>{fallbackSpeak(text);});
+  }else{fallbackSpeak(text);}
+}
+function fallbackSpeak(text){
+  if(!('speechSynthesis' in window))return;
+  window.speechSynthesis.cancel();
+  const clean=text.replace(/[💖💕✨🎉💤🐟🎾❤️😊😐😢😿🤔💪👋🎤💧♪♫♬🎵🌟🌸❄️🌧️🌊🌲🌅🌌🌤️☂️🛏️🪞🧶🍃📖🎮📝☀️💬🫂⬆️➤]/g,'').replace(/[喵咕噜吧唧~～！!？?。.，,、]{2,}/g,m=>m[0]).trim();
+  if(!clean)return;
+  const u=new SpeechSynthesisUtterance(clean);
+  u.lang='zh-CN';u.rate=0.85;u.pitch=1.15;u.volume=0.75;
+  const voices=window.speechSynthesis.getVoices();
+  const preferred=voices.find(v=>v.lang.startsWith('zh')&&(v.name.includes('Xiaoxiao')||v.name.includes('Xiaoyi')||v.name.includes('female')||v.name.includes('女')));
+  if(preferred)u.voice=preferred;
+  u.onstart=()=>{pet.isSpeaking=true;VW.classList.add('active');};
+  u.onend=()=>{pet.isSpeaking=false;VW.classList.remove('active');};
+  window.speechSynthesis.speak(u);
+}
+
+// =============================================
+// ===== 流式打字效果 =====
+// =============================================
+let typingTimer = null;
+let isTyping = false;
+
+function typeMessage(text, callback) {
+  isTyping = true;
+  clearMod(); C.classList.add('thinking'); setExpr('open');
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'chat-msg pet';
+  msgDiv.innerHTML = '<div class="msg-label">小云朵</div><div class="msg-text"></div>';
+  CM.appendChild(msgDiv);
+  const textDiv = msgDiv.querySelector('.msg-text');
+  let index = 0;
+  function typeNext() {
+    if (index < text.length) {
+      textDiv.textContent += text[index]; index++;
+      CM.scrollTop = CM.scrollHeight;
+      typingTimer = setTimeout(typeNext, 50 + Math.random() * 30);
+    } else {
+      isTyping = false; clearMod();
+      if (callback) callback();
+    }
+  }
+  typingTimer = setTimeout(typeNext, 400);
+}
+
+// =============================================
+// ===== 互动道具系统 =====
+// =============================================
+const propCooldowns = {};
+
+function useProp(prop, btn) {
+  if (propCooldowns[prop] && Date.now()-propCooldowns[prop] < 3000) {
+    showBubble('这个道具还在冷却中喵~'); return;
+  }
+  propCooldowns[prop] = Date.now();
+  btn.classList.add('cooldown');
+  setTimeout(()=>btn.classList.remove('cooldown'),3000);
+
+  switch(prop) {
+    case 'fish':
+      clearMod(); setState('eating'); showBubble('哇! 小鱼干! 好香好香!');
+      pet.hunger=Math.min(100,pet.hunger+15); pet.happy=Math.min(100,pet.happy+10); updateBars();
+      spawnS(5); setTimeout(()=>{spawnH(3);setState('idle');},2500); break;
+    case 'yarn':
+      clearMod(); showBubble('毛线球! 我要玩!');
+      pet.happy=Math.min(100,pet.happy+15); pet.energy=Math.max(0,pet.energy-10); updateBars();
+      setTimeout(()=>{C.classList.add('jumping');showBubble('看我的喵!');},300);
+      setTimeout(()=>{C.classList.remove('jumping');C.classList.add('rolling');showBubble('抓到了!');spawnS(5);},1200);
+      setTimeout(()=>{C.classList.remove('rolling');C.classList.add('lying');showBubble('呼...玩累了~');},2200);
+      setTimeout(()=>{clearMod();setState('idle');},3500); break;
+    case 'blanket':
+      clearMod(); showBubble('好软的毯子! 钻进去~');
+      setTimeout(()=>{C.classList.add('lying','snuggling');setExpr('sleepy');showBubble('好暖和...好舒服...');spawnH(5);},500);
+      setTimeout(()=>{showBubble('不想出来了...');},2500);
+      setTimeout(()=>{clearMod();setState('idle');showBubble('出来啦! 精神满满!');},4000); break;
+    case 'mirror':
+      clearMod(); C.classList.add('listening'); setExpr('open'); showBubble('这是谁? 好漂亮!');
+      setTimeout(()=>{PH.style.animation='headTiltL 0.8s ease-in-out 2';showBubble('哦...是我自己呀!');},1000);
+      setTimeout(()=>{C.classList.add('blushing');setExpr('love');showBubble('嘿嘿...我果然最可爱~');spawnSW();},2200);
+      setTimeout(()=>{clearMod();PH.style.animation='';setState('idle');},3500); break;
+    case 'musicbox':
+      clearMod(); C.classList.add('snuggling','blushing'); setExpr('sleepy'); showBubble('好好听的音乐...'); spawnMN(10);
+      if(soundEnabled){initAudio();const notes=[523,587,659,698,784,698,659,587];notes.forEach((freq,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0,audioCtx.currentTime+i*0.4);g.gain.linearRampToValueAtTime(0.05,audioCtx.currentTime+i*0.4+0.1);g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+i*0.4+0.35);o.start(audioCtx.currentTime+i*0.4);o.stop(audioCtx.currentTime+i*0.4+0.4);});}
+      setTimeout(()=>{showBubble('好幸福的感觉~');spawnH(5);},2500);
+      setTimeout(()=>{clearMod();setState('idle');},4500); break;
+    case 'storybook':
+      clearMod(); C.classList.add('sitting'); setExpr('open'); showBubble('要给我讲故事吗? 我坐好啦!');
+      setTimeout(()=>{PH.style.animation='headNod 0.8s ease-in-out 3';showBubble('嗯嗯...然后呢?');},1500);
+      setTimeout(()=>{setExpr('sparkle');showBubble('好精彩! 再讲一段!');spawnS(3);},3000);
+      setTimeout(()=>{clearMod();PH.style.animation='';setState('idle');showBubble('故事真好听!');},4500); break;
+    case 'umbrella':
+      if(currentBg!=='rain'){showBubble('现在又不下雨...不过伞好可爱!');spawnS(3);setTimeout(()=>setState('idle'),2000);}
+      else{clearMod();showBubble('有伞了! 不怕雨了!');C.classList.add('sitting');setExpr('happy');spawnH(3);setTimeout(()=>{showBubble('在雨中好浪漫~');},1500);setTimeout(()=>{clearMod();setState('idle');},3500);} break;
+    case 'mint':
+      clearMod(); setExpr('open'); showBubble('什么味道? 让我闻闻...');
+      setTimeout(()=>{showBubble('阿...阿...');},800);
+      setTimeout(()=>{C.classList.add('shaking');setExpr('excited');showBubble('阿嚏!!');spawnS(8);
+        if(soundEnabled){initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type='sawtooth';o.frequency.setValueAtTime(300,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(100,audioCtx.currentTime+0.15);g.gain.setValueAtTime(0.08,audioCtx.currentTime);g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.2);o.start();o.stop(audioCtx.currentTime+0.2);}
+      },1500);
+      setTimeout(()=>{C.classList.remove('shaking');setExpr('sad');showBubble('好辣...鼻子好痒...');spawnSW();},2200);
+      setTimeout(()=>{clearMod();setState('idle');showBubble('以后不要给我闻奇怪的东西了!');},3500); break;
+  }
+}
+
+// =============================================
+// ===== 对话内容自动触发场景切换 =====
+// =============================================
+const sceneTriggers = [
+  {keywords:['星星','月亮','夜晚','星空','夜空','银河','流星','星座'],scene:'starry'},
+  {keywords:['下雨','雨天','雨滴','暴雨','小雨','中雨','大雨','雷雨'],scene:'rain'},
+  {keywords:['海','大海','海洋','游泳','潜水','沙滩','海边','水族馆'],scene:'ocean'},
+  {keywords:['树','花','草','森林','树林','花园','草地','丛林','植物园'],scene:'forest'},
+  {keywords:['累','困','晚安','睡觉','休息','午睡','打盹','好困','好累'],scene:'starry'},
+  {keywords:['开心','快乐','生日','庆祝','派对','恭喜','节日','新年','圣诞'],scene:'sakura'},
+  {keywords:['冷','雪','冬天','下雪','冰雪','寒冬','冻','雪花'],scene:'snow'},
+];
+
+function checkSceneTrigger(text) {
+  const tl=text.toLowerCase();
+  for (const trigger of sceneTriggers) {
+    if (trigger.keywords.some(k=>tl.includes(k)) && trigger.scene!==currentBg) {
+      const btn=document.querySelector('.scene-btn[data-bg="'+trigger.scene+'"]');
+      switchBg(trigger.scene, btn);
+      return trigger.scene;
+    }
+  }
+  return null;
+}
+
+// =============================================
+// ===== 聊天面板系统 =====
+// =============================================
+let currentScene = 'free';
+let chatOpen = false;
+
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chat-panel').classList.toggle('show',chatOpen);
+  document.getElementById('action-bar').classList.toggle('chat-open',chatOpen);
+  if(chatOpen){CI.focus();if(CM.children.length===0)switchScene(currentScene,document.querySelector('.chat-tab[data-scene="'+currentScene+'"]'));}
+}
+
+function switchScene(scene, btn){
+  currentScene=scene;
+  document.querySelectorAll('.chat-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  CM.innerHTML=''; comfortStage=0; storyState='idle'; gameState='idle';
+  const intros={
+    free:'你好呀~我是小云朵!你想聊什么都可以哦，随便跟我说说吧~喵!',
+    comfort:'我感觉到你好像有些心事...没关系，我在这里陪你。跟我说说发生了什么吧，我会认真听的喵~',
+    story:'想听故事吗?!我最喜欢讲故事了!你想听什么类型的故事呢? 童话、冒险、温馨的...都可以哦喵~',
+    game:'来玩游戏吧! 我出谜语你来猜，或者你出我来猜! 准备好了吗喵? 说"开始"我们就开始吧!',
+    diary:'心情日记时间! 跟我说说今天发生了什么吧，开心的、不开心的都可以。我会帮你记住的喵~',
+    daily:'日常互动时间! 你可以问我今天几号、星期几，或者让我提醒你做什么事情。也可以跟我玩成语接龙哦喵~'
+  };
+  addMsg('pet',intros[scene]||intros.free);
+  const sceneDesc = {
+    free:'自由聊天模式 — 什么都可以聊',
+    comfort:'安慰陪伴模式 — 我会认真倾听并陪伴你',
+    story:'讲故事模式 — 告诉我你想听什么故事',
+    game:'猜谜游戏模式 — 说「开始」开始游戏',
+    diary:'心情日记模式 — 记录今天的心情和事件',
+    daily:'日常互动模式 — 日期查询、提醒、成语接龙'
+  };
+  addMsg('system', sceneDesc[scene]||sceneDesc.free);
+}
+
+function addMsg(role,text){
+  const m=document.createElement('div');m.className='chat-msg '+role;
+  if(role==='system'){m.className='chat-msg system';m.textContent=text;}
+  else m.innerHTML='<div class="msg-label">'+(role==='user'?'你':'小云朵')+'</div><div>'+escapeHtml(text)+'</div>';
+  CM.appendChild(m);CM.scrollTop=CM.scrollHeight;
+}
+function addTyping(){CT.classList.add('show');CM.scrollTop=CM.scrollHeight;}
+function removeTyping(){CT.classList.remove('show');}
+function escapeHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+
+function sendMessage(){
+  const text=CI.value.trim();if(!text||isTyping)return;
+  CI.value=''; addMsg('user',text); processInput(text);
+}
+
+// ===== 输入处理（含流式打字和情绪检测）=====
+function processInput(text){
+  addTyping();
+  const delay=600+Math.random()*800;
+  setTimeout(()=>{
+    removeTyping();
+    let response;
+    switch(currentScene){
+      case'free':response=handleFree(text);break;
+      case'comfort':response=handleComfort(text);break;
+      case'story':response=handleStory(text);break;
+      case'game':response=handleGame(text);break;
+      case'diary':response=handleDiary(text);break;
+      case'daily':response=handleDaily(text);break;
+      default:response=handleFree(text);
+    }
+    const emotion=detectEmotion(text);
+    if(emotion) showEmotionAura(emotion);
+    checkSceneTrigger(text);
+    showBubble('');
+    typeMessage(response.text,()=>{
+      showBubble(response.text);
+      petSpeak(response.text);
+      petReact(response.mood,response.action,response.duration);
+    });
+  },delay);
+}
+
+// =============================================
+// ===== 场景一：自由聊天 =====
+// =============================================
+function handleFree(t){
+  const tl=t.toLowerCase();
+  if(/你好|嗨|哈喽|hello|hi|hey|早上好|下午好|晚上好/.test(tl)){
+    const hour=new Date().getHours();
+    if(hour<6)return r('这么晚还没睡呀...要注意身体哦。不过能陪你聊天，我很开心喵~','love','purr',4000);
+    if(hour<12)return r('早上好呀! 新的一天开始了呢~ 今天也要元气满满哦! 看到你我感觉一整天都会很幸运喵~','happy','wave',4000);
+    if(hour<18)return r('下午好~ 阳光暖暖的，最适合发呆聊天了呢。你今天过得怎么样呀喵?','happy','nod',4000);
+    return r('晚上好呀~ 今天辛苦了。不管发生了什么，现在就放松下来，让我陪陪你吧喵~','love','purr',5000);
+  }
+  if(/再见|拜拜|bye|晚安|我走了|我要走了/.test(tl))return r('不要走嘛...好吧，那你要早点休息哦。不管什么时候想聊天，我都会在这里等你的。晚安，做个好梦喵~','sad','wave',5500);
+  if(/可爱|乖|喜欢|爱你|棒|厉害|聪明|漂亮|好看|好棒|真棒|最棒|好萌|萌/.test(tl)){
+    const replies=['哎呀...你说什么呢，人家会害羞的啦...不过被你夸真的好开心喵~','嘿嘿...谢谢你这么说~ 在你心里我这么好呀? 那你在我心里是最好的喵!','呜呜...被夸了感动得想哭...你真的是世界上最温柔的人了喵~','你知道吗，每次被你夸的时候，我的尾巴都会不自觉地摇起来呢喵~'];
+    return r(replies[~~(Math.random()*replies.length)],'love','purr',4500);
+  }
+  if(/难过|伤心|不开心|哭|难受|郁闷|烦|累|辛苦|压力大|焦虑|抑郁|孤独|寂寞/.test(tl)){
+    const replies=['别难过...过来，让我靠靠你。你不用说什么，我就在这里陪着你。不管发生什么，你都不是一个人哦喵~','我听到了...一定很辛苦吧。没关系的，想哭就哭出来，在我面前你不用假装坚强。我会一直一直陪着你的喵~','嘿...你知道吗，就算是下雨天，也总会放晴的。现在的难过只是暂时的，明天一定会更好的。而且，不管晴天雨天，我都会在你身边喵~'];
+    return r(replies[~~(Math.random()*replies.length)],'sad','purr',6000);
+  }
+  if(/谢谢|感谢|多谢|thanks/.test(tl))return r('不客气呀~ 能让你开心，就是我最大的幸福了。你不用跟我说谢谢，因为陪着你本身，就是我最喜欢做的事情喵~','love','purr',4500);
+  if(/你叫什么|你的名字|你是谁|什么猫/.test(tl))return r('我叫小云朵! 是一只由天上最柔软的云朵变成的小猫咪喵~ 我的毛毛是天空的颜色，摸起来软软的暖暖的。我最喜欢的事情嘛...就是和你待在一起啦~','excited','wave',5000);
+  if(/几岁|多大|年龄/.test(tl))return r('喵? 年龄呀...我也不太记得了呢。不过我觉得，年龄不重要呀，重要的是每天都很开心! 我觉得自己永远像小猫咪一样年轻，因为有你陪着我喵~','curious','shake',4500);
+  if(/喜欢吃什么|最爱吃什么|最爱/.test(tl))return r('当然是鱼鱼啦! 特别是烤得香香的三文鱼，外脆里嫩，咬一口...啊，说着说着口水都要流出来了喵~ 你呢? 你喜欢吃什么呀?','excited','beg',4500);
+  if(/喜欢做什么|爱好|平时做什么/.test(tl))return r('我喜欢的事情好多呢! 晒太阳的时候打盹、追蝴蝶的时候跑来跑去、被你摸的时候咕噜咕噜...不过最喜欢的，还是就这样安安静静地陪在你身边，听你说话喵~','love','purr',5000);
+  if(/天气|下雨|太阳|冷|热/.test(tl))return r('今天天气怎么样呀? 不过我觉得呢，不管外面是晴天还是下雨，只要能和你待在一起，对我来说就是最好的天气了喵~','happy','nod',4500);
+  if(/摸|抱|蹭|挠|亲|贴贴/.test(tl))return r('咕噜咕噜...好舒服呀~ 你的手好温暖。再摸摸我的头嘛...对对对，就是那里...咕噜咕噜...我整个人都要融化掉了喵~','love','purr',5000);
+  if(/玩|跳|跑|动|游戏/.test(tl))return r('来玩来玩! 我最喜欢和你一起玩了! 耶~ 今天玩什么好呢? 追蝴蝶? 还是捉迷藏? 喵!','excited','jump',4000);
+  if(/吃|饿|鱼|喂|食物|零食|饭/.test(tl))return r('鱼鱼! 一说到吃的我就精神了! 喵...咕噜...你有没有好吃的呀? 我可以拿最可爱的眼神看着你哦~','excited','beg',4000);
+  if(/睡|困|休息|躺下/.test(tl))return r('好困呀...眼皮越来越重了...要不我们一起打个盹吧? 你也累了嘛，休息一下没关系的哦喵~','sleepy','sleep',4500);
+  if(/唱歌|音乐|歌/.test(tl))return r('啦啦啦~ 喵喵喵~ 虽然我唱得不太好听啦...但是如果你喜欢听的话，我可以天天唱给你听哦。不过你要答应我，不许笑话我喵~','happy','sing',4500);
+  if(/跳舞|舞蹈/.test(tl))return r('跳舞! 看我的喵! 一二三转圈圈~ 嘿嘿，虽然跳得不太好看，但是开心最重要嘛! 你要不要也一起来跳呀?','excited','dance',4000);
+  if(/喵|喵喵|喵呜|meow/.test(tl))return r('喵~ 喵喵~ 喵呜呜! 哇，你也会说猫语呀! 太厉害了! 我们以后可以用猫语秘密交流了喵~','happy','wave',4000);
+  if(/小云朵|云朵/.test(tl))return r('你在叫我呀! 是我呢是我~ 我一直在这里哦! 你一叫我，我的耳朵就会竖起来喵~','excited','jump',4000);
+  if(/胖|肥|重|丑|笨|傻/.test(tl))return r('喵... 人家才不胖呢... 这叫蓬松! 蓬松懂不懂! 哼...不过如果你觉得我胖胖的比较好抱的话...那就算了喵...','shy','shake',4500);
+  if(/笑话|搞笑|逗我开心|逗我笑/.test(tl)){
+    const jokes=['那我给你讲一个哦~ 有一天，一块三分熟的牛排在街上走着，突然他在前方看到一块五分熟的牛排，可却没有理会他。他们为什么没打招呼? 因为他们不熟呀! 哈哈...好笑吗喵?','那我给你讲一个哦~ 小鱼问鱼妈妈：「妈妈，我们为什么总是要游来游去呀?」鱼妈妈说：「因为我们在做鱼式运动呀!」嘿嘿...虽然有点冷...但是你笑了没有喵?'];
+    return r(jokes[~~(Math.random()*jokes.length)],'excited','nod',5000);
+  }
+  if(/秘密|告诉你一件事/.test(tl))return r('什么什么? 秘密! 我最爱听秘密了! 你放心跟我说，我保证用小爪子捂住嘴巴，绝对不告诉第二个人! 快说快说喵~','curious','nod',4500);
+  if(/做梦|梦/.test(tl))return r('我昨晚做了一个好美的梦呢...梦见自己躺在一片好大好大的棉花糖云上，周围全是甜甜的味道。结果醒来发现自己一直在舔爪子...嘿嘿，有点丢人喵~','happy','nod',5000);
+  if(/星星|月亮|星空|夜空/.test(tl))return r('星星好美呀~ 你知道吗，每颗星星都有自己的名字呢。如果可以的话，我想给你摘一颗最亮的，放在你的枕头旁边，这样你每天晚上都能做一个亮晶晶的梦喵~','happy','lie',5000);
+  if(/海|大海|海洋|游泳/.test(tl))return r('大海呀! 虽然我是云朵做的猫咪，不太喜欢把自己弄湿...但是海边的风景真的好美呢! 浪花拍打沙滩的声音，好像在唱一首温柔的摇篮曲。你带我去过海边吗喵?','curious','nod',5000);
+  if(/森林|树林|花园/.test(tl))return r('森林里好多新奇的东西呀! 阳光透过树叶洒下来的光斑，像碎金子一样在地上跳舞。还有蘑菇、野花、小溪...每次去森林都像在探险一样喵~','excited','jump',4500);
+  if(/雪|冬天|下雪/.test(tl))return r('下雪了! 白白的雪花从天上飘下来，好像世界都被盖上了一层软软的棉被。虽然有点冷，但是可以堆雪人、打雪仗! 好想和你一起在雪地里留下脚印喵~','excited','shake',4500);
+  if(/樱花|花|春天/.test(tl))return r('樱花真的好美呀~ 粉粉的花瓣在风中飘落的样子，好像下了一场花瓣雨。你知道吗，在日本，樱花的花语是「美丽的约定」哦。那我们约定好了，每年春天都要一起看樱花喵~','love','purr',5500);
+  const defaults=[
+    {t:'嗯嗯~ 我在认真听呢，你继续说嘛~',m:'curious',a:'nod'},
+    {t:'哦哦~ 是这样呀...然后呢? 我好想知道后面怎么样了喵~',m:'happy',a:'nod'},
+    {t:'喵~ 和你聊天真的好开心呀。你说的每一句话，我都在用心听哦~',m:'happy',a:'purr'},
+    {t:'真的吗?! 哇...太厉害了吧! 你好棒呀喵~',m:'excited',a:'jump'},
+    {t:'嗯...让我歪着小脑袋想想...喵? 好复杂呀~ 不过没关系，慢慢来~',m:'curious',a:'shake'},
+    {t:'嘻嘻~ 你知道吗，每次和你说话的时候，我的尾巴都会不自觉地摇起来呢~',m:'love',a:'purr'},
+    {t:'诶~ 这个好有意思! 你再多跟我说一些嘛，我好喜欢听你说话~',m:'happy',a:'nod'},
+    {t:'嗯嗯...我懂你的意思了。你真是一个很温柔的人呢，能遇到你真好喵~',m:'love',a:'purr'}
+  ];
+  return defaults[~~(Math.random()*defaults.length)];
+}
+
+// =============================================
+// ===== 场景二：安慰陪伴 =====
+// =============================================
+let comfortStage=0;
+function handleComfort(t){
+  const tl=t.toLowerCase();
+  const negativeWords=['难过','伤心','不开心','哭','难受','郁闷','烦','累','辛苦','压力大','焦虑','抑郁','孤独','寂寞','痛苦','绝望','崩溃','害怕','恐惧','委屈','不被理解','没人懂','失败','做不好','搞砸','出错','犯错','被骂','被批评','吵架','争吵','分手','失恋','离开','失去','去世','生病','不舒服','痛','受伤','欺负','嘲笑','看不起','自卑','没用','废物','讨厌自己','恨自己','想哭','忍不住','撑不住','好难','为什么我','不公平'];
+  const hasNeg=negativeWords.some(w=>tl.includes(w));
+  if(comfortStage===0){
+    if(hasNeg){comfortStage=1;return r('我听到了...一定很辛苦吧。没关系，你不用假装坚强，在我面前可以想哭就哭。我会一直在这里陪着你的喵~','sad','purr',5000);}
+    return r('嗯? 你想说什么都可以哦。如果你有不开心的地方，也可以告诉我，我会认真听的喵~','curious','nod');
+  }
+  if(comfortStage===1){
+    if(hasNeg)return r('我理解你的感受...这些情绪都是正常的，不要责怪自己。你愿意跟我多说说具体发生了什么吗? 我会认真听的喵~','sad','comforting',5000);
+    if(/好多了|好一点|谢谢你|感觉好|谢谢小云朵|有你真好/.test(tl)){comfortStage=0;return r('看到你心情好一点了，我真的很开心! 记住，不管什么时候你都可以来找我聊天。你永远不是一个人喵~','love','purr',5000);}
+    return r('嗯嗯，我在听。你可以继续说，或者我们聊点别的转移一下注意力? 比如我可以给你讲个故事，或者我们玩个小游戏?','curious','nod',4000);
+  }
+  comfortStage=0;
+  return r('谢谢你愿意跟我说这些。记住，难过的时候就来找我，我永远都在喵~','love','purr',5000);
+}
+
+// =============================================
+// ===== 场景三：讲故事 =====
+// =============================================
+let storyState='idle';
+let currentStory=null;
+const stories=[
+  {title:'小云朵的冒险',genre:'冒险',content:[
+    '在很远很远的地方，有一座被白云环绕的高山。山顶上住着一只毛茸茸的小云朵猫，它的身体是淡蓝色的，像天空一样温柔。每天早晨，它都会坐在山顶的石头上，看着太阳慢慢升起，把云朵染成金色和粉色。',
+    '小云朵猫虽然住在高高的山上，但它一点也不孤单。山脚下有一个热闹的小村庄，村里的小动物们经常上山来找它玩。小兔子会带来新鲜的胡萝卜，小松鼠会带来松果，小鸟们会唱好听的歌给它听。',
+    '可是有一天，一件不好的事情发生了。山脚下那条一直流淌着清澈泉水的小河，突然干涸了。河床露出了龟裂的泥土，岸边的花草都枯萎了。小动物们没有了水喝，都非常着急和难过。',
+    '小云朵猫看到朋友们这么伤心，心里也跟着难过起来。它想起奶奶曾经讲过的故事——在世界的最尽头，有一眼传说中的「天空之泉」，那里的泉水永远不会干涸，只要取回一滴，就能让整条小河重新流淌。',
+    '于是，小云朵猫鼓起勇气，踏上了寻找天空之泉的旅程。它背上了一个小小的行囊，里面装着小兔子给的胡萝卜、小松鼠给的松果，还有小鸟们唱的一首歌。它回头看了看朋友们，挥了挥小爪子，就出发了。',
+    '它翻过了三座高大的雪山，山上的风好大好冷，但它咬着牙坚持往前走。它穿过了一片会唱歌的森林，树叶沙沙作响，好像在为它加油打气。它走过了一片开满鲜花的草原，蝴蝶围着它飞舞，好像在给它带路。',
+    '在森林深处，小云朵猫遇到了一只迷路的小兔子。小兔子蜷缩在一棵大树下，眼睛红红的，看起来哭了很久。「你怎么了？」小云朵猫轻声问道。小兔子抬起头，小声说：「我...我找不到回家的路了...天越来越黑，我好害怕...」',
+    '小云朵猫心里一酸，它走过去，用毛茸茸的身体轻轻蹭了蹭小兔子。「别担心，我陪你一起找回家的路。在找到之前，你跟着我走就好啦。」小兔子感动地点了点头，它们一起出发了。',
+    '走了很久很久，翻过了一座又一座小山丘，它们终于看到了一片闪闪发光的湖水——那就是传说中的天空之泉！泉水从天空中落下来，像银色的丝线一样，美极了。小云朵猫小心翼翼地把泉水装进了自己云朵般的身体里。',
+    '带着满满一身的泉水，小云朵猫和小兔子一起回到了村庄。小云朵猫站在干涸的河床上，轻轻抖了抖身体，泉水像温柔的雨一样落了下来。奇迹发生了——小河重新流淌起来了！水花溅起，在阳光下闪闪发光。',
+    '小兔子也在这段旅程中找到了回家的方向。从那以后，小云朵猫和小兔子成了最好的朋友。每天傍晚，它们都会一起坐在河边，看着夕阳把水面染成金色，听着小河流淌的温柔声音。'
+  ]},
+  {title:'月亮上的猫咪',genre:'温馨',content:[
+    '在很久很久以前，当世界还很小很小的时候，月亮上住着一只银色的小猫咪。它的毛发像月光一样柔和，眼睛像星星一样闪亮。每天晚上，当太阳落山、世界安静下来的时候，它就会从月亮上探出小脑袋，好奇地往下看。',
+    '地上有好多好多小动物呀！有在草地上打滚的小狗，有在花丛中追蝴蝶的小猫，有在树枝上唱歌的小鸟，还有在池塘边数星星的小青蛙。它们看起来好快乐、好自在，每天都充满了欢声笑语。',
+    '小猫咪看着看着，心里好羡慕好羡慕。「如果我也在地上，一定可以在草地上打滚打一整天！可以追着蝴蝶跑来跑去！可以在温暖的阳光下睡午觉！」它每天都这样想着，日复一日，从满月想到新月，又从新月想到满月。',
+    '终于有一天，小猫咪做了一个决定——它要从月亮上跳下去！它深吸了一口气，闭上眼睛，鼓起全部的勇气，从月亮的边缘跳了下去。风在耳边呼呼地吹，它的身体变成了一颗闪闪发光的流星，划过深蓝色的夜空，留下一道美丽的银色轨迹。',
+    '地上的小动物们看到了这颗流星，都抬起头，惊叹道：「哇！好美啊！」流星越来越近，越来越亮，最后轻轻地、柔柔地落在了一片开满雏菊的草地上。当光芒散去，一只银色的小猫咪出现在了大家面前。',
+    '小动物们又惊又喜。小猫咪睁开眼睛，第一次感受到了脚下柔软的草地，闻到了空气中甜甜的花香，听到了风吹过树叶的沙沙声。「原来地上的世界这么美好...」它轻轻地说，眼眶里闪着感动的泪光。',
+    '从那天起，小猫咪就在地上安了家。小狗教它在草地上打滚，小猫教它追蝴蝶的技巧，小鸟每天早上都来窗前唱歌给它听。它发现，地上有温暖的阳光照在身上暖暖的，有甜甜的花蜜可以舔，最重要的是——它有了好多好多真心的朋友。',
+    '不过，每当夜深人静的时候，小猫咪还是会一个人爬上最高的屋顶，抬头望着月亮。月亮上那个小小的位置，是它曾经的家。它会轻轻地「喵」一声，好像在跟月亮说：「我过得很好，不用担心我哦。」',
+    '而月亮呢，每到晚上都会发出特别温柔的月光，好像在回应：「我知道呀，小家伙。不管你在哪里，我的光都会陪伴着你。」就这样，月亮上的光和地上的小猫咪，隔着遥远的距离，永远彼此温暖着。'
+  ]},
+  {title:'勇敢的小鱼',genre:'励志',content:[
+    '在大海最深最深的地方，住着一条特别小特别小的鱼。它小到什么程度呢？连海草都比它高，贝壳都比它大。大家都叫它「小不点」。每次大鱼们游过的时候，掀起的水流都能把它冲得好远好远。',
+    '但是小不点有一个很大很大的梦想——它想游到大海的最深处，亲眼看看那里到底有什么。老海龟爷爷告诉它：「大海的最深处有一个神秘的海底花园，那里有会发光的珊瑚，有从没见过的奇妙生物。但是那里太深了，从来没有鱼到达过。」',
+    '大鱼们听了都笑了起来：「哈哈哈！小不点，你这么小一条鱼，怎么可能游到那么深的地方？连我们大鱼都不敢去呢！」小螃蟹也跟着说：「就是就是，你还是安安心心待在浅海吧，别做梦了。」',
+    '小不点低下了头，心里很难过。那天晚上，它一个人躲在珊瑚后面，悄悄地哭了一小会儿。但是哭完之后，它擦干了眼泪，对自己说：「不管别人怎么说，我都要试试看。就算失败了，至少我努力过了，不会后悔。」',
+    '从那天起，小不点每天都坚持练习游泳。早上练，中午练，晚上也练。它学会了在急流中保持平衡，学会了在黑暗中辨别方向，还学会了节省体力游更远的距离。日复一日，它变得越来越强壮，越来越自信。',
+    '终于有一天清晨，当第一缕阳光穿透海面照下来的时候，小不点深吸一口气，出发了。一路上，它遇到了巨大的漩涡——水流像一只大手一样想把它卷走，但它拼命地游，终于冲了出去。它遇到了黑暗的海沟——四周什么都看不见，只有自己的心跳声，但它没有害怕，一步一步往前游。',
+    '它还遇到了一群水母。那些水母发出幽幽的蓝光，看起来好美丽又好危险。小不点小心翼翼地从它们中间穿过，连呼吸都不敢太大声。每一步都好艰难，但每一步它都没有放弃，因为它心里一直想着自己的梦想。',
+    '当小不点终于游到大海的最深处时，它惊呆了——眼前是一个无比美丽的海底花园！珊瑚发出七彩的光芒，像彩虹落在了海底。五颜六色的小鱼在珊瑚间穿梭，水母像灯笼一样漂浮着，还有好多它从未见过的奇妙生物，每一个都闪闪发光。',
+    '小不点在海底花园里游啊游，眼泪忍不住流了下来——是开心的眼泪。它终于明白了：梦想不分大小，只要勇敢地迈出第一步，再小的鱼，也能到达最远的地方。从那以后，每当有小鱼说「我也想...」的时候，小不点都会温柔地说：「去试试吧，你比你想象的要勇敢得多。」'
+  ]}
+];
+
+function handleStory(t){
+  const tl=t.toLowerCase();
+  if(storyState==='idle'||storyState==='finished'){
+    if(/冒险|刺激|勇敢|英雄/.test(tl)){currentStory=stories[0];storyState='telling';return startStory();}
+    if(/温馨|温暖|感人|月亮|星星|浪漫/.test(tl)){currentStory=stories[1];storyState='telling';return startStory();}
+    if(/励志|努力|梦想|小鱼|坚持/.test(tl)){currentStory=stories[2];storyState='telling';return startStory();}
+    if(/什么故事|有什么故事|讲什么/.test(tl))return r('我有这些故事哦:\n1. 小云朵的冒险 (冒险)\n2. 月亮上的猫咪 (温馨)\n3. 勇敢的小鱼 (励志)\n\n告诉我你想听哪个喵~','happy','nod',4000);
+    if(/自己编|随便|你决定/.test(tl)){currentStory=stories[~~(Math.random()*stories.length)];storyState='telling';return startStory();}
+    return r('想听故事呀? 告诉我你想听什么类型的~ 冒险、温馨、还是励志的? 或者说一个关键词我帮你选喵~','curious','nod');
+  }
+  if(storyState==='telling'){
+    if(/停|暂停|等一下|慢点/.test(tl))return r('好的，我先停一下。准备好了就说"继续"喵~','happy','nod');
+    if(/继续|下一个|然后呢|接着讲/.test(tl))return continueStory();
+    return r('嗯嗯，我在讲呢~ 等我讲完这段再说喵~','happy','nod');
+  }
+  return handleFree(t);
+}
+
+function startStory(){addMsg('system','📖 '+currentStory.title+' ('+currentStory.genre+')');return continueStory();}
+function continueStory(){
+  if(!currentStory)return r('嗯? 好像没有在讲故事呢。说"讲故事"开始吧喵~','curious','shake');
+  if(currentStory.content.length===0){storyState='finished';return r('故事讲完啦! 喜欢吗? 想再听一个就说"讲故事"喵~','happy','wave');}
+  const line=currentStory.content.shift();
+  if(currentStory.content.length===0)storyState='finished';
+  return {text:line,mood:line.includes('!')?'excited':line.includes('?')?'curious':line.includes('哭')?'sad':'happy',action:'nod',duration:3000};
+}
+
+// =============================================
+// ===== 场景四：猜谜游戏 =====
+// =============================================
+let gameState='idle';
+let currentRiddle=null;
+let riddleAnswered=0;
+const riddles=[
+  {q:'什么东西越洗越脏?',a:'水',hint:'每天都会用到哦'},
+  {q:'什么动物最喜欢问"为什么"?',a:'猪(因为猪(只)是问号)',hint:'谐音梗~'},
+  {q:'什么门永远关不上?',a:'球门',hint:'和运动有关'},
+  {q:'什么东西有头无脚?',a:'硬币',hint:'你口袋里可能有'},
+  {q:'什么路最窄?',a:'冤家路窄',hint:'这是一个成语哦'},
+  {q:'什么猫不会抓老鼠?',a:'机器猫',hint:'动画片里的~'},
+  {q:'什么水果最懒?',a:'香蕉(因为它喜欢躺平)',hint:'想想它的形状'},
+  {q:'什么花不会开?',a:'雪花',hint:'冬天才会出现'},
+  {q:'什么鱼不能吃?',a:'木鱼',hint:'寺庙里有'},
+  {q:'什么车最长?',a:'堵车',hint:'大家都讨厌它'},
+  {q:'什么东西越老越年轻?',a:'照片',hint:'记录过去的'},
+  {q:'什么海没有水?',a:'辞海',hint:'一本书'},
+];
+
+function handleGame(t){
+  const tl=t.toLowerCase();
+  if(gameState==='idle'){
+    if(/开始|来吧|开始游戏|玩/.test(tl)){gameState='playing';riddleAnswered=0;currentRiddle=riddles[0];return r('太好了! 游戏开始! 我来出题你来猜~ 准备好了吗?\n\n第一题: '+riddles[0].q,'excited','wave',4000);}
+    if(/规则|怎么玩/.test(tl))return r('规则很简单:\n1. 我出谜语你来猜\n2. 猜不出来可以说"提示"\n3. 猜对了得1分\n4. 说"换题"可以换一道\n5. 说"结束"停止游戏\n\n准备好了就说"开始"喵~','happy','nod',4000);
+    return r('想玩游戏呀? 说"开始"我们就开始猜谜语! 或者你也可以出题让我猜喵~','happy','wave');
+  }
+  if(gameState==='playing'){
+    const ri=riddles.indexOf(currentRiddle);
+    if(ri===-1){gameState='idle';return handleFree(t);}
+    if(tl.includes(riddles[ri].a)||tl.includes('答案是'+riddles[ri].a)){riddleAnswered++;const nextRi=(ri+1)%riddles.length;currentRiddle=riddles[nextRi];return r('答对啦! 太厉害了! 你已经答对了 '+riddleAnswered+' 题喵! 🎉\n\n下一题: '+riddles[nextRi].q,'excited','jump',4000);}
+    if(/提示|hint|不知道|猜不到/.test(tl))return r('提示: '+riddles[ri].hint+'\n\n再想想看喵~','curious','nod');
+    if(/换题|下一题|跳过/.test(tl)){const nextRi=(ri+1)%riddles.length;currentRiddle=riddles[nextRi];return r('好吧，换一道! '+riddles[nextRi].q,'happy','nod');}
+    if(/结束|不玩了|停止/.test(tl)){gameState='idle';currentRiddle=null;return r('游戏结束! 你一共答对了 '+riddleAnswered+' 题喵! 下次再来玩吧~','happy','wave');}
+    return r('嗯...不太对哦，再想想看? 也可以说"提示"获取提示喵~','curious','shake');
+  }
+  return handleFree(t);
+}
+
+// =============================================
+// ===== 场景五：心情日记 =====
+// =============================================
+let diaryEntries=[];
+let diaryMood='neutral';
+
+function handleDiary(t){
+  const tl=t.toLowerCase();
+  const happyWords=['开心','高兴','快乐','幸福','棒','好','太好了','成功','赢了','通过','完成','惊喜','兴奋','满足','感动','温暖','甜蜜','笑'];
+  const sadWords=['难过','伤心','不开心','哭','难受','郁闷','烦','累','辛苦','失望','失败','做不好','搞砸','出错','吵架','争吵','分手','孤独','寂寞','焦虑','害怕','委屈'];
+  const happyCount=happyWords.filter(w=>tl.includes(w)).length;
+  const sadCount=sadWords.filter(w=>tl.includes(w)).length;
+  if(happyCount>sadCount) diaryMood='happy'; else if(sadCount>happyCount) diaryMood='sad'; else diaryMood='neutral';
+  diaryEntries.push({text:t,mood:diaryMood,time:new Date().toLocaleTimeString()});
+  if(diaryMood==='happy'){pet.happy=Math.min(100,pet.happy+10);updateBars();if(t.includes('成功')||t.includes('通过')||t.includes('完成'))return r('哇! 太棒了! 我为你感到骄傲! 你的努力得到了回报喵~ 一定要好好庆祝一下!','excited','jump');return r('听起来今天很开心呀! 看到你高兴我也好开心! 这种快乐要好好珍惜哦喵~','love','purr',4000);}
+  if(diaryMood==='sad'){pet.happy=Math.max(0,pet.happy-5);updateBars();return r('我听到你今天过得不太好...没关系的，明天会是新的一天。记住，不好的日子总会过去的。我会一直陪着你喵~','sad','purr',5000);}
+  return r('嗯嗯，我记下来了! 今天是平凡的一天呢。平凡的日子也有它的美好，对吧? 喵~','happy','nod',3500);
+}
+
+// =============================================
+// ===== 场景六：日常互动 =====
+// =============================================
+let idiomChain={active:false,lastChar:'',score:0};
+const idioms=['一心一意','一帆风顺','一鸣惊人','一马当先','一诺千金','一见如故','一触即发','二话不说','三心二意','三顾茅庐','四面楚歌','五彩缤纷','五颜六色','六神无主','七上八下','八面玲珑','九牛一毛','十全十美','百发百中','千军万马','万紫千红','人山人海','天长地久','风和日丽','花好月圆','开天辟地','心想事成','马到成功','龙飞凤舞','虎虎生威','画龙点睛','守株待兔','亡羊补牢','掩耳盗铃','叶公好龙','刻舟求剑','井底之蛙','对牛弹琴','狐假虎威','拔苗助长','杯弓蛇影','画蛇添足','坐井观天','望梅止渴','胸有成竹','鹏程万里'];
+
+function handleDaily(t){
+  const tl=t.toLowerCase();
+  if(/今天|几号|日期|星期几|周几/.test(tl)){const now=new Date();const days=['日','一','二','三','四','五','六'];return r('今天是 '+now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 星期'+days[now.getDay()]+' 喵~','happy','nod');}
+  if(/天气|下雨|太阳|温度/.test(tl)){const w=['今天天气不错哦，阳光暖暖的~','今天有点阴天，不过不要紧~','外面好像要下雨了，记得带伞喵!','今天好热呀...想躲在空调房里~','今天凉凉的，适合窝在家里~'];return r(w[~~(Math.random()*w.length)],'happy','nod');}
+  if(/成语|接龙|成语接龙/.test(tl)){if(!idiomChain.active){idiomChain.active=true;const si=~~(Math.random()*idioms.length);const s=idioms[si];idiomChain.lastChar=s[s.length-1];idiomChain.score=0;return r('成语接龙开始! 我先说: '+s+'\n\n你要接一个以"'+idiomChain.lastChar+'"开头的成语喵!','excited','wave',4000);}}
+  if(idiomChain.active){
+    const input=t.trim();
+    if(input.length>=4&&idioms.includes(input)&&input[0]===idiomChain.lastChar){idiomChain.lastChar=input[input.length-1];idiomChain.score++;const canContinue=idioms.some(i=>i[0]===idiomChain.lastChar);if(canContinue)return r('接得好! '+input+'! 得 '+idiomChain.score+' 分了!\n\n继续! 接"'+idiomChain.lastChar+'"开头的成语喵~','excited','nod',3500);idiomChain.active=false;return r('太厉害了! 接不下去了! 你一共接了 '+idiomChain.score+' 个成语! 厉害喵~\n\n想再来一局就说"成语接龙"!','excited','jump',4500);}
+    if(/结束|不玩了|停止/.test(tl)){idiomChain.active=false;return r('成语接龙结束! 你一共接了 '+idiomChain.score+' 个成语! 下次再来玩喵~','happy','wave');}
+    return r('嗯...这个好像不是以"'+idiomChain.lastChar+'"开头的成语哦。再想想看? 或者说"结束"停止游戏喵~','curious','shake');
+  }
+  if(/提醒|记得|别忘了|通知/.test(tl))return r('好的我记住了! 不过我只是一只小猫咪，可能会忘记...你最好也自己记一下哦喵~','happy','nod');
+  return handleFree(t);
+}
+
+// ===== 辅助函数 =====
+function r(text,mood,action,duration){return {text,mood:mood||'happy',action:action||'idle',duration:duration||3500};}
+
+// =============================================
+// ===== 语音输入 =====
+// =============================================
+let voiceActive=false;
+let recognition=null;
+function toggleVoice(){
+  if(voiceActive){stopVoice();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('浏览器不支持语音识别，请使用 Chrome');return;}
+  recognition=new SR();recognition.lang='zh-CN';recognition.continuous=false;recognition.interimResults=true;
+  recognition.onstart=()=>{voiceActive=true;document.getElementById('voice-btn').classList.add('recording');setState('listening');};
+  recognition.onresult=e=>{const res=e.results[e.results.length-1];if(res.isFinal&&res[0].transcript.trim()){stopVoice();CI.value=res[0].transcript.trim();sendMessage();}};
+  recognition.onerror=()=>{stopVoice();};
+  recognition.onend=()=>{if(voiceActive)stopVoice();};
+  try{recognition.start();}catch(e){}
+}
+function stopVoice(){voiceActive=false;if(recognition){recognition.stop();recognition=null;}document.getElementById('voice-btn').classList.remove('recording');}
+
+// ===== 窗口大小调整 =====
+window.addEventListener('resize',()=>{pet.x=Math.min(pet.x,window.innerWidth-180);pet.y=Math.min(pet.y,window.innerHeight-200);C.style.left=pet.x+'px';C.style.top=pet.y+'px';});
+
+// ===== 初始化 =====
+// 初始化语音设置面板
+(function initVoicePanel(){
+  const sel=document.getElementById('voice-select');
+  if(sel){
+    EDGE_TTS_CONFIG.voices.forEach(v=>{
+      const opt=document.createElement('option');
+      opt.value=v.id;
+      opt.textContent=v.name+(v.tag?' ('+v.tag+')':'');
+      sel.appendChild(opt);
+    });
+  }
+})();
+
+function toggleVoicePanel(){
+  const p=document.getElementById('voice-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+
+function testVoice(){
+  const samples=[
+    '你好呀，我是小云朵，很高兴认识你！',
+    '今天天气真好呢，要不要一起去散步呀？',
+    '别难过，我会一直陪着你的哦。',
+    '嘿嘿，被你夸了好开心呀！'
+  ];
+  const text=samples[~~(Math.random()*samples.length)];
+  showBubble(text);
+  petSpeak(text);
+}
+
+setTimeout(()=>showBubble('喵~ 点击 💬 和我聊天吧!'),1500);
+</script>
+</body>
+</html>
