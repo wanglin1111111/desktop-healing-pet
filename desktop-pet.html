@@ -343,32 +343,73 @@
 </div>
 
 <!-- 语音设置面板 -->
-<div id="voice-panel" style="display:none;position:fixed;top:50px;right:10px;width:280px;background:white;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:16px;z-index:9999;font-size:13px;">
+<div id="voice-panel" style="display:none;position:fixed;top:50px;right:10px;width:300px;background:white;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:16px;z-index:9999;font-size:13px;max-height:90vh;overflow-y:auto;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
     <span style="font-weight:700;color:#5aabb8;">🗣️ 语音设置</span>
     <button onclick="toggleVoicePanel()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#999;">✕</button>
   </div>
-  <div style="margin-bottom:10px;">
-    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-      <input type="checkbox" id="edge-tts-switch" checked onchange="edgeTTSEnabled=this.checked" style="width:16px;height:16px;">
-      <span>Edge TTS 高品质语音（推荐）</span>
-    </label>
-    <div style="font-size:11px;color:#999;margin-left:24px;">微软神经网络语音，免费、音质接近真人</div>
+
+  <!-- 引擎选择 -->
+  <div style="margin-bottom:12px;">
+    <div style="font-weight:600;margin-bottom:6px;">语音引擎：</div>
+    <div style="display:flex;gap:4px;">
+      <button id="engine-edge" onclick="switchEngine('edge')" style="flex:1;padding:6px 4px;border:2px solid #5aabb8;background:#5aabb8;color:white;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;">Edge TTS<br><span style="font-weight:400;font-size:10px;">免费</span></button>
+      <button id="engine-openai" onclick="switchEngine('openai')" style="flex:1;padding:6px 4px;border:2px solid #ddd;background:white;color:#666;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;">OpenAI TTS<br><span style="font-weight:400;font-size:10px;">顶级音质</span></button>
+      <button id="engine-browser" onclick="switchEngine('browser')" style="flex:1;padding:6px 4px;border:2px solid #ddd;background:white;color:#666;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600;">浏览器内置<br><span style="font-weight:400;font-size:10px;">离线</span></button>
+    </div>
   </div>
-  <div style="margin-bottom:10px;">
-    <div style="font-weight:600;margin-bottom:4px;">选择声音：</div>
-    <select id="voice-select" onchange="edgeTTSVoice=this.value" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;">
-    </select>
+
+  <!-- Edge TTS 设置 -->
+  <div id="edge-settings">
+    <div style="margin-bottom:10px;">
+      <div style="font-weight:600;margin-bottom:4px;">选择声音：</div>
+      <select id="voice-select" onchange="edgeTTSVoice=this.value" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;"></select>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-weight:600;margin-bottom:4px;">语速：<span id="rate-val">正常</span></div>
+      <input type="range" id="rate-slider" min="-50" max="50" value="0" oninput="edgeTTSRate=(this.value>=0?'+':'')+this.value+'%';document.getElementById('rate-val').textContent=this.value==0?'正常':this.value>0?'快 '+this.value+'%':'慢 '+Math.abs(this.value)+'%'" style="width:100%;">
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-weight:600;margin-bottom:4px;">音调：<span id="pitch-val">正常</span></div>
+      <input type="range" id="pitch-slider" min="-50" max="50" value="0" oninput="edgeTTSPitch=(this.value>=0?'+':'')+this.value+'Hz';document.getElementById('pitch-val').textContent=this.value==0?'正常':this.value>0?'高 '+this.value+'Hz':'低 '+Math.abs(this.value)+'Hz'" style="width:100%;">
+    </div>
   </div>
-  <div style="margin-bottom:10px;">
-    <div style="font-weight:600;margin-bottom:4px;">语速：<span id="rate-val">正常</span></div>
-    <input type="range" id="rate-slider" min="-50" max="50" value="0" oninput="edgeTTSRate=(this.value>=0?'+':'')+this.value+'%';document.getElementById('rate-val').textContent=this.value==0?'正常':this.value>0?'快 '+this.value+'%':'慢 '+Math.abs(this.value)+'%'" style="width:100%;">
+
+  <!-- OpenAI TTS 设置 -->
+  <div id="openai-settings" style="display:none;">
+    <div style="margin-bottom:10px;">
+      <div style="font-weight:600;margin-bottom:4px;">API Key：</div>
+      <input type="password" id="openai-key-input" placeholder="sk-..." oninput="openaiApiKey=this.value.trim();saveVoiceSettings();" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;box-sizing:border-box;">
+      <div style="font-size:10px;color:#999;margin-top:2px;">在 platform.openai.com 获取，密钥仅保存在本地</div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-weight:600;margin-bottom:4px;">API 地址（支持自定义）：</div>
+      <input type="text" id="openai-base-url" placeholder="https://api.openai.com/v1" oninput="openaiTTSBaseURL=this.value.trim()||'https://api.openai.com/v1';saveVoiceSettings();" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;box-sizing:border-box;">
+      <div style="font-size:10px;color:#999;margin-top:2px;">可填兼容API地址（如中转站、Azure OpenAI等）</div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-weight:600;margin-bottom:4px;">模型：</div>
+      <select id="openai-model-select" onchange="openaiTTSModel=this.value;saveVoiceSettings();" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;">
+        <option value="tts-1">tts-1（快速，推荐）</option>
+        <option value="tts-1-hd">tts-1-hd（高品质）</option>
+        <option value="gpt-4o-mini-tts">gpt-4o-mini-tts（最新）</option>
+      </select>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-weight:600;margin-bottom:4px;">选择声音：</div>
+      <select id="openai-voice-select" onchange="openaiTTSVoice=this.value;saveVoiceSettings();" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:12px;"></select>
+    </div>
   </div>
-  <div style="margin-bottom:10px;">
-    <div style="font-weight:600;margin-bottom:4px;">音调：<span id="pitch-val">正常</span></div>
-    <input type="range" id="pitch-slider" min="-50" max="50" value="0" oninput="edgeTTSPitch=(this.value>=0?'+':'')+this.value+'Hz';document.getElementById('pitch-val').textContent=this.value==0?'正常':this.value>0?'高 '+this.value+'Hz':'低 '+Math.abs(this.value)+'Hz'" style="width:100%;">
+
+  <!-- 浏览器语音说明 -->
+  <div id="browser-settings" style="display:none;">
+    <div style="padding:12px;background:#f8f9fa;border-radius:10px;text-align:center;color:#666;font-size:12px;">
+      <div style="font-size:24px;margin-bottom:4px;">🔊</div>
+      使用浏览器内置语音合成<br>无需网络连接，音质取决于系统
+    </div>
   </div>
-  <button onclick="testVoice()" style="width:100%;padding:8px;background:linear-gradient(135deg,#87ceeb,#5aabb8);color:white;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-weight:600;">🎤 试听一下</button>
+
+  <button onclick="testVoice()" style="width:100%;padding:10px;background:linear-gradient(135deg,#87ceeb,#5aabb8);color:white;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-weight:600;margin-top:4px;">🎤 试听一下</button>
 </div>
 
 <div id="pet-container">
@@ -840,6 +881,57 @@ let edgeAudioCtx=null;
 let edgeAudioQueue=[];
 let edgeIsPlaying=false;
 
+// =============================================
+// ===== OpenAI TTS 语音合成（顶级音质）=====
+// =============================================
+const OPENAI_TTS_CONFIG={
+  voices:[
+    {id:'alloy',name:'Alloy（中性）',tag:'推荐'},
+    {id:'echo',name:'Echo（男声）',tag:''},
+    {id:'fable',name:'Fable（英式）',tag:''},
+    {id:'onyx',name:'Onyx（深沉男声）',tag:''},
+    {id:'nova',name:'Nova（女声）',tag:''},
+    {id:'shimmer',name:'Shimmer（温柔女声）',tag:''}
+  ]
+};
+let openaiTTSEnabled=false;
+let openaiApiKey='';
+let openaiTTSModel='tts-1';
+let openaiTTSVoice='alloy';
+let openaiTTSBaseURL='https://api.openai.com/v1';
+
+// OpenAI TTS 核心：通过REST API获取音频
+function openaiTTSSpeak(text){
+  return new Promise((resolve,reject)=>{
+    if(!text||!text.trim()){resolve(null);return;}
+    const clean=text.replace(/[💖💕✨🎉💤🐟🎾❤️😊😐😢😿🤔💪👋🎤💧♪♫♬🎵🌟🌸❄️🌧️🌊🌲🌅🌌🌤️☂️🛏️🪞🧶🍃📖🎮📝☀️💬🫂⬆️➤]/g,'').replace(/[喵咕噜吧唧~～！!？?。.，,、]{2,}/g,m=>m[0]).trim();
+    if(!clean){resolve(null);return;}
+    const body=JSON.stringify({
+      model:openaiTTSModel,
+      input:clean,
+      voice:openaiTTSVoice,
+      response_format:'mp3',
+      speed:1.0
+    });
+    const timeout=setTimeout(()=>{reject(new Error('OpenAI TTS 超时'));},20000);
+    fetch(openaiTTSBaseURL+'/audio/speech',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+openaiApiKey
+      },
+      body:body
+    }).then(resp=>{
+      clearTimeout(timeout);
+      if(!resp.ok)throw new Error('OpenAI TTS HTTP '+resp.status);
+      return resp.arrayBuffer();
+    }).then(buf=>{
+      if(buf&&buf.byteLength>0)resolve(buf);
+      else resolve(null);
+    }).catch(err=>{clearTimeout(timeout);reject(err);});
+  });
+}
+
 // Edge TTS WebSocket 二进制消息头构造
 function makeEdgeHeader(path){
   const p='Path:'+path;
@@ -942,14 +1034,18 @@ function processAudioQueue(){
 }
 
 // 统一语音接口
+let currentTTSEngine='edge'; // 'edge' | 'openai' | 'browser'
 function petSpeak(text){
   if(!text)return;
-  if(edgeTTSEnabled){
+  if(currentTTSEngine==='openai'&&openaiTTSEnabled&&openaiApiKey){
+    openaiTTSSpeak(text).then(buf=>{
+      if(buf){if(edgeIsPlaying){edgeAudioQueue.push(buf);}else{playEdgeAudio(buf);}}
+      else{fallbackSpeak(text);}
+    }).catch(()=>{fallbackSpeak(text);});
+  }else if(currentTTSEngine==='edge'&&edgeTTSEnabled){
     edgeTTSSpeak(text).then(buf=>{
-      if(buf){
-        if(edgeIsPlaying){edgeAudioQueue.push(buf);}
-        else{playEdgeAudio(buf);}
-      }else{fallbackSpeak(text);}
+      if(buf){if(edgeIsPlaying){edgeAudioQueue.push(buf);}else{playEdgeAudio(buf);}}
+      else{fallbackSpeak(text);}
     }).catch(()=>{fallbackSpeak(text);});
   }else{fallbackSpeak(text);}
 }
@@ -1419,6 +1515,7 @@ window.addEventListener('resize',()=>{pet.x=Math.min(pet.x,window.innerWidth-180
 // ===== 初始化 =====
 // 初始化语音设置面板
 (function initVoicePanel(){
+  // Edge TTS 声音列表
   const sel=document.getElementById('voice-select');
   if(sel){
     EDGE_TTS_CONFIG.voices.forEach(v=>{
@@ -1428,7 +1525,62 @@ window.addEventListener('resize',()=>{pet.x=Math.min(pet.x,window.innerWidth-180
       sel.appendChild(opt);
     });
   }
+  // OpenAI TTS 声音列表
+  const oSel=document.getElementById('openai-voice-select');
+  if(oSel){
+    OPENAI_TTS_CONFIG.voices.forEach(v=>{
+      const opt=document.createElement('option');
+      opt.value=v.id;
+      opt.textContent=v.name+(v.tag?' ('+v.tag+')':'');
+      oSel.appendChild(opt);
+    });
+  }
+  // 从localStorage恢复设置
+  loadVoiceSettings();
 })();
+
+function loadVoiceSettings(){
+  try{
+    const s=JSON.parse(localStorage.getItem('pet_voice_settings')||'{}');
+    if(s.engine){currentTTSEngine=s.engine;switchEngineUI(s.engine);}
+    if(s.openaiApiKey){openaiApiKey=s.openaiApiKey;const ki=document.getElementById('openai-key-input');if(ki)ki.value=s.openaiApiKey;}
+    if(s.openaiBaseURL){openaiTTSBaseURL=s.openaiBaseURL;const bi=document.getElementById('openai-base-url');if(bi)bi.value=s.openaiBaseURL;}
+    if(s.openaiModel){openaiTTSModel=s.openaiModel;const mi=document.getElementById('openai-model-select');if(mi)mi.value=s.openaiModel;}
+    if(s.openaiVoice){openaiTTSVoice=s.openaiVoice;const vi=document.getElementById('openai-voice-select');if(vi)vi.value=s.openaiVoice;}
+    if(s.edgeVoice){edgeTTSVoice=s.edgeVoice;const ev=document.getElementById('voice-select');if(ev)ev.value=s.edgeVoice;}
+  }catch(e){}
+}
+function saveVoiceSettings(){
+  try{
+    localStorage.setItem('pet_voice_settings',JSON.stringify({
+      engine:currentTTSEngine,
+      openaiApiKey:openaiApiKey,
+      openaiBaseURL:openaiTTSBaseURL,
+      openaiModel:openaiTTSModel,
+      openaiVoice:openaiTTSVoice,
+      edgeVoice:edgeTTSVoice
+    }));
+  }catch(e){}
+}
+
+function switchEngine(engine){
+  currentTTSEngine=engine;
+  switchEngineUI(engine);
+  saveVoiceSettings();
+}
+function switchEngineUI(engine){
+  const engines=['edge','openai','browser'];
+  const panels={edge:'edge-settings',openai:'openai-settings',browser:'browser-settings'};
+  engines.forEach(e=>{
+    const btn=document.getElementById('engine-'+e);
+    if(btn){
+      if(e===engine){btn.style.borderColor='#5aabb8';btn.style.background='#5aabb8';btn.style.color='white';}
+      else{btn.style.borderColor='#ddd';btn.style.background='white';btn.style.color='#666';}
+    }
+    const p=document.getElementById(panels[e]);
+    if(p)p.style.display=e===engine?'block':'none';
+  });
+}
 
 function toggleVoicePanel(){
   const p=document.getElementById('voice-panel');
